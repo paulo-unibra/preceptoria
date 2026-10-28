@@ -1,0 +1,25 @@
+[Unit]
+Description=Preceptoria API (AdonisJS)
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=preceptoria
+Group=preceptoria
+WorkingDirectory=/opt/preceptoria/current
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node bin/server.js
+Restart=always
+RestartSec=3
+# Servidor compartilhado com pouca memória: limita o serviço para não afetar os demais.
+MemoryHigh=280M
+MemoryMax=400M
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+SyslogIdentifier=preceptoria
+
+[Install]
+WantedBy=multi-user.target

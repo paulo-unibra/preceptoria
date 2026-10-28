@@ -1,0 +1,2 @@
+# Backup diário do banco (03:30) — mantém 14 cópias em /opt/preceptoria/shared/backups
+30 3 * * * preceptoria cd /opt/preceptoria/current && /usr/bin/node ace.js backup:run --keep=14 >> /opt/preceptoria/shared/backup.log 2>&1
