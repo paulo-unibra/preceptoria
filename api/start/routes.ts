@@ -129,6 +129,7 @@ router
         // RF-10 — relatórios (JSON ou ?format=pdf)
         router.get('reports/students/:id', [ReportsController, 'student'])
         router.get('reports/classrooms/:id', [ReportsController, 'classroom'])
+        router.get('reports/classrooms/:id/day', [ReportsController, 'day'])
 
         // RF-03 — ranking
         router.get('ranking', [RankingController, 'index'])

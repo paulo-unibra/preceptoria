@@ -13,6 +13,13 @@ export const historyQueryValidator = vine.compile(
   })
 )
 
+export const dayReportQueryValidator = vine.compile(
+  vine.object({
+    date: isoDate(),
+    format: vine.enum(['json', 'pdf'] as const).optional(),
+  })
+)
+
 export const rankingQueryValidator = vine.compile(
   vine.object({
     kind: vine.enum(['weekly', 'biweekly'] as const).optional(),

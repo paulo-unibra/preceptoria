@@ -4,7 +4,8 @@ import Student from '#models/student'
 import ClassroomAccess from '#services/classroom_access'
 import { buildClassroomReport, buildStudentReport } from '#services/history_service'
 import PdfService from '#services/pdf_service'
-import { historyQueryValidator, parseTypes } from '#validators/queries'
+import { buildDayReport } from '#services/day_report_service'
+import { dayReportQueryValidator, historyQueryValidator, parseTypes } from '#validators/queries'
 import { invalid } from '#support/errors'
 
 async function parseQuery(request: HttpContext['request']) {
@@ -82,6 +83,27 @@ export default class ReportsController {
         .header(
           'Content-Disposition',
           `attachment; filename="relatorio-turma-${slug(classroom.name)}-${classroom.schoolYear}.pdf"`
+        )
+        .send(pdf)
+    }
+    return report
+  }
+
+  /** Painel "Registros do dia": tudo o que foi registrado para a turma na data (JSON ou PDF com `format=pdf`). */
+  async day({ auth, params, request, response }: HttpContext) {
+    const classroom = await Classroom.findOrFail(params.id)
+    await ClassroomAccess.assert(auth.user!, classroom.id)
+    const { date, format } = await request.validateUsing(dayReportQueryValidator, {
+      data: request.qs(),
+    })
+    const report = await buildDayReport(auth.user!, classroom, date)
+    if (format === 'pdf') {
+      const pdf = await PdfService.dayReport(report)
+      return response
+        .header('Content-Type', 'application/pdf')
+        .header(
+          'Content-Disposition',
+          `attachment; filename="registros-do-dia-${slug(classroom.name)}-${date}.pdf"`
         )
         .send(pdf)
     }

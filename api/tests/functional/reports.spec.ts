@@ -379,6 +379,109 @@ test.group('Histórico e relatórios (CA03, CA04, CA05, RN05, RN06, RN07)', (gro
     assert.include(text, 'Não identificado (Substituindo colega)')
   })
 
+  test('relatório do dia: reúne frequência, fardamento, aulas e RAs em JSON e PDF', async ({
+    client,
+    assert,
+  }) => {
+    const { classroom, preceptor, student, other } = await setup()
+    const outsider = await makeUser('preceptor', [await makeClassroom('Outra turma')])
+    const body = (extra: object) => ({ classroom_id: classroom.id, date: today(), ...extra })
+
+    ;(
+      await client
+        .put(`${API}/attendances/bulk`)
+        .loginAs(preceptor)
+        .json(
+          body({
+            start_time: '07:15',
+            records: [
+              { student_id: student.id, status: 'late', arrival_time: '07:40' },
+              {
+                student_id: other.id,
+                status: 'absent',
+                is_justified: true,
+                note: 'Consulta médica',
+              },
+            ],
+          })
+        )
+    ).assertStatus(200)
+    ;(
+      await client
+        .put(`${API}/uniform-checks/bulk`)
+        .loginAs(preceptor)
+        .json(
+          body({
+            records: [
+              { student_id: student.id, uniform_status: 'inadequate', footwear_status: 'adequate' },
+            ],
+          })
+        )
+    ).assertStatus(200)
+    ;(
+      await client
+        .put(`${API}/lesson-days`)
+        .loginAs(preceptor)
+        .json(
+          body({
+            planned_lessons: 2,
+            lessons: [
+              {
+                period: 1,
+                subject: 'Matemática',
+                teacher_name: 'Prof. Carlos',
+                content: 'Frações',
+              },
+            ],
+          })
+        )
+    ).assertStatus(201)
+    await client.post(`${API}/occurrences`).loginAs(preceptor).json(ra(student.id, 13))
+
+    const res = await client
+      .get(`${API}/reports/classrooms/${classroom.id}/day?date=${today()}`)
+      .loginAs(preceptor)
+    res.assertStatus(200)
+    const r = res.body()
+    assert.equal(r.kind, 'day')
+    assert.equal(r.date, today())
+    assert.equal(r.start_time, '07:15')
+    assert.equal(r.totals.attendance.late, 1)
+    assert.equal(r.totals.attendance.absent_justified, 1)
+    assert.equal(r.totals.uniform.uniform_inadequate, 1)
+    assert.equal(r.totals.occurrences.negative, 1)
+    assert.equal(r.lessons.items[0].lessons[0].subject, 'Matemática')
+    assert.property(r.ra_codes, '13')
+
+    const pdf = await client
+      .get(`${API}/reports/classrooms/${classroom.id}/day?date=${today()}&format=pdf`)
+      .loginAs(preceptor)
+    pdf.assertStatus(200)
+    assert.include(pdf.header('content-type'), 'application/pdf')
+    assert.include(pdf.header('content-disposition'), `registros-do-dia-7-a-${today()}.pdf`)
+    const text = pdfText(await PdfService.dayReport(r))
+    for (const expected of [
+      'Registros do dia',
+      '07:15',
+      'chegou às 07:40',
+      'Consulta médica',
+      'Frações',
+      'Prof. Carlos',
+      'Fato do código 13',
+    ])
+      assert.include(text, expected)
+
+    // data obrigatória e acesso restrito às turmas do usuário
+    ;(
+      await client.get(`${API}/reports/classrooms/${classroom.id}/day`).loginAs(preceptor)
+    ).assertStatus(422)
+    ;(
+      await client
+        .get(`${API}/reports/classrooms/${classroom.id}/day?date=${today()}`)
+        .loginAs(outsider)
+    ).assertStatus(403)
+  })
+
   test('RNF04: estudante que mudou de turma não perde registros no relatório da turma antiga', async ({
     client,
     assert,
