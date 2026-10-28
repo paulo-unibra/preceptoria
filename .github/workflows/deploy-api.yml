@@ -41,7 +41,9 @@ jobs:
           HOST: 127.0.0.1
           LOG_LEVEL: silent
           APP_KEY: ci-only-key-0123456789-abcdefghijklmnopqrstuvwxyz
-        run: npm test
+        run: |
+          mkdir -p tmp
+          npm test
 
       - name: Build de produção
         run: node ace build
