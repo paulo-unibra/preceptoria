@@ -37,6 +37,7 @@ test.group('Ranking (RF-03)', (group) => {
       .put(`${API}/attendances/bulk`)
       .loginAs(preceptor)
       .json({
+        start_time: '07:30',
         classroom_id: classroom.id,
         date: today(),
         records: [

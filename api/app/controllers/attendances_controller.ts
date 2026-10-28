@@ -1,8 +1,10 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import Attendance from '#models/attendance'
+import AttendanceSession from '#models/attendance_session'
 import ClassroomAccess from '#services/classroom_access'
 import { bulkUpsertDaily, rosterFor } from '#services/daily_records'
 import { bulkAttendanceValidator, rosterQueryValidator } from '#validators/daily'
+import { parseDate } from '#support/dates'
 import { pageParams, toId } from '#support/query'
 
 export default class AttendancesController {
@@ -11,16 +13,29 @@ export default class AttendancesController {
     const { classroom_id, date } = await request.validateUsing(rosterQueryValidator)
     await ClassroomAccess.assert(auth.user!, classroom_id)
     const roster = await rosterFor(Attendance, classroom_id, date)
+    const session = await AttendanceSession.query()
+      .where('classroom_id', classroom_id)
+      .where('date', date)
+      .first()
+    // Último horário gravado para a turma: sugestão para as próximas chamadas.
+    const last = await AttendanceSession.query()
+      .where('classroom_id', classroom_id)
+      .orderBy('updated_at', 'desc')
+      .orderBy('id', 'desc')
+      .first()
     return {
       classroom_id,
       date,
+      start_time: session?.startTime ?? null,
+      last_start_time: last?.startTime ?? null,
       data: roster.map((r) => ({ student: r.student, attendance: r.record })),
     }
   }
 
   /** RF-05 — registra/corrige presença, falta e atraso de várias pessoas de uma vez. */
   async bulk({ auth, request }: HttpContext) {
-    const { classroom_id, date, records } = await request.validateUsing(bulkAttendanceValidator)
+    const { classroom_id, date, start_time, records } =
+      await request.validateUsing(bulkAttendanceValidator)
     const saved = await bulkUpsertDaily(
       Attendance,
       auth.user!,
@@ -33,7 +48,22 @@ export default class AttendancesController {
         arrivalTime: r.status === 'late' ? (r.arrival_time ?? null) : null,
         isJustified: r.status === 'absent' ? (r.is_justified ?? false) : false,
         note: r.note ?? null,
-      })
+      }),
+      async (trx, classroom) => {
+        const session = await AttendanceSession.query({ client: trx })
+          .where('classroom_id', classroom.id)
+          .where('date', date)
+          .first()
+        if (session) {
+          session.merge({ startTime: start_time })
+          await session.save()
+        } else {
+          await AttendanceSession.create(
+            { classroomId: classroom.id, date: parseDate(date), startTime: start_time },
+            { client: trx }
+          )
+        }
+      }
     )
     return { data: saved }
   }

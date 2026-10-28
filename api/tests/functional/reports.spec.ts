@@ -94,6 +94,7 @@ test.group('Histórico e relatórios (CA03, CA04, CA05, RN05, RN06, RN07)', (gro
       .put(`${API}/attendances/bulk`)
       .loginAs(preceptor)
       .json({
+        start_time: '07:30',
         classroom_id: classroom.id,
         date: daysAgo(2),
         records: [{ student_id: student.id, status: 'absent' }],
@@ -171,6 +172,7 @@ test.group('Histórico e relatórios (CA03, CA04, CA05, RN05, RN06, RN07)', (gro
       .put(`${API}/attendances/bulk`)
       .loginAs(preceptor)
       .json({
+        start_time: '07:30',
         classroom_id: classroom.id,
         date: today(),
         records: [{ student_id: student.id, status: 'absent' }],
@@ -179,6 +181,7 @@ test.group('Histórico e relatórios (CA03, CA04, CA05, RN05, RN06, RN07)', (gro
       .put(`${API}/attendances/bulk`)
       .loginAs(preceptor)
       .json({
+        start_time: '07:30',
         classroom_id: classroom.id,
         date: daysAgo(1),
         records: [{ student_id: student.id, status: 'late', arrival_time: '07:45' }],
@@ -231,6 +234,7 @@ test.group('Histórico e relatórios (CA03, CA04, CA05, RN05, RN06, RN07)', (gro
       .put(`${API}/attendances/bulk`)
       .loginAs(preceptor)
       .json({
+        start_time: '07:30',
         classroom_id: classroom.id,
         date: today(),
         records: [{ student_id: student.id, status: 'absent' }],
@@ -266,6 +270,7 @@ test.group('Histórico e relatórios (CA03, CA04, CA05, RN05, RN06, RN07)', (gro
       .put(`${API}/attendances/bulk`)
       .loginAs(preceptor)
       .json({
+        start_time: '07:30',
         classroom_id: classroom.id,
         date: daysAgo(1),
         records: [{ student_id: student.id, status: 'absent', is_justified: true }],
@@ -325,6 +330,7 @@ test.group('Histórico e relatórios (CA03, CA04, CA05, RN05, RN06, RN07)', (gro
       .put(`${API}/attendances/bulk`)
       .loginAs(preceptor)
       .json({
+        start_time: '07:30',
         classroom_id: classroom.id,
         date: today(),
         records: [

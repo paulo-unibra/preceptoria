@@ -1,4 +1,5 @@
 import db from '@adonisjs/lucid/services/db'
+import type { TransactionClientContract } from '@adonisjs/lucid/types/database'
 import Classroom from '#models/classroom'
 import Student from '#models/student'
 import type User from '#models/user'
@@ -39,7 +40,9 @@ export async function bulkUpsertDaily(
   classroomId: number,
   date: string,
   records: { student_id: number }[],
-  toAttributes: (record: any) => Record<string, unknown>
+  toAttributes: (record: any) => Record<string, unknown>,
+  /** Executado na mesma transação (ex.: gravar a hora de início da aula). */
+  inTransaction?: (trx: TransactionClientContract, classroom: Classroom) => Promise<void>
 ) {
   const classroom = await writableClassroom(user, classroomId)
   const ids = records.map((r) => r.student_id)
@@ -58,6 +61,7 @@ export async function bulkUpsertDaily(
   }
 
   await db.transaction(async (trx) => {
+    if (inTransaction) await inTransaction(trx, classroom)
     const existing = await Model.query({ client: trx })
       .where('date', date)
       .whereIn('student_id', ids)

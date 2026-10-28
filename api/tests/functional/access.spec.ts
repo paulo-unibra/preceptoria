@@ -79,6 +79,7 @@ test.group('Acesso por turma e perfis (RNF02, RF-04)', (group) => {
         .put(`${API}/attendances/bulk`)
         .loginAs(coord)
         .json({
+          start_time: '07:30',
           classroom_id: classroom.id,
           date: today(),
           records: [{ student_id: student.id, status: 'present' }],

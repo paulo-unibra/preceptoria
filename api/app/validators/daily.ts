@@ -14,6 +14,11 @@ export const bulkAttendanceValidator = vine.compile(
   vine.object({
     classroom_id: vine.number().positive(),
     date: pastOrTodayDate(),
+    // Hora de início da aula: obrigatória em toda chamada (HH:mm).
+    start_time: vine
+      .string()
+      .trim()
+      .regex(/^([01]\d|2[0-3]):[0-5]\d$/),
     records: vine
       .array(
         vine.object({

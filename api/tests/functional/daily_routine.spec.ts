@@ -1,6 +1,7 @@
 import { test } from '@japa/runner'
 import testUtils from '@adonisjs/core/services/test_utils'
 import Attendance from '#models/attendance'
+import AttendanceSession from '#models/attendance_session'
 import AuditLog from '#models/audit_log'
 import Lesson from '#models/lesson'
 import {
@@ -34,6 +35,7 @@ test.group('Frequência (RF-05)', (group) => {
       .put(`${API}/attendances/bulk`)
       .loginAs(preceptor)
       .json({
+        start_time: '07:30',
         classroom_id: classroom.id,
         date: today(),
         records: [
@@ -65,6 +67,7 @@ test.group('Frequência (RF-05)', (group) => {
       .put(`${API}/attendances/bulk`)
       .loginAs(preceptor)
       .json({
+        start_time: '07:30',
         classroom_id: classroom.id,
         date: today(),
         records: [
@@ -78,6 +81,68 @@ test.group('Frequência (RF-05)', (group) => {
     assert.isNull(rows[1].arrivalTime)
   })
 
+  test('a hora de início da aula é obrigatória e inválida é recusada', async ({ client }) => {
+    const { classroom, preceptor, a } = await setup()
+    const send = (extra: Record<string, unknown>) =>
+      client
+        .put(`${API}/attendances/bulk`)
+        .loginAs(preceptor)
+        .json({
+          classroom_id: classroom.id,
+          date: today(),
+          records: [{ student_id: a.id, status: 'present' }],
+          ...extra,
+        })
+    // setup antigo do teste sempre manda start_time; aqui testamos sem ele e com valores ruins
+    ;(await send({ start_time: undefined })).assertStatus(422)
+    for (const start_time of ['', '25:00', '7:30', 'abc']) {
+      ;(await send({ start_time })).assertStatus(422)
+    }
+    ;(await send({ start_time: '07:30' })).assertStatus(200)
+  })
+
+  test('grava a hora de início por chamada e sugere o último horário da turma nas próximas', async ({
+    client,
+    assert,
+  }) => {
+    const { classroom, preceptor, a } = await setup()
+    const send = (date: string, start_time: string) =>
+      client
+        .put(`${API}/attendances/bulk`)
+        .loginAs(preceptor)
+        .json({
+          classroom_id: classroom.id,
+          date,
+          start_time,
+          records: [{ student_id: a.id, status: 'present' }],
+        })
+    const roster = async (date: string) =>
+      (
+        await client
+          .get(`${API}/attendances/roster?classroom_id=${classroom.id}&date=${date}`)
+          .loginAs(preceptor)
+      ).body()
+
+    const first = await roster(today())
+    assert.isNull(first.start_time)
+    assert.isNull(first.last_start_time)
+
+    ;(await send(daysAgo(1), '07:30')).assertStatus(200)
+    const next = await roster(today())
+    assert.isNull(next.start_time, 'ainda não há chamada hoje')
+    assert.equal(next.last_start_time, '07:30', 'sugere o último horário gravado da turma')
+
+    // hoje o professor muda o horário: passa a ser o novo "último"
+    ;(await send(today(), '08:15')).assertStatus(200)
+    // corrigir o mesmo dia não duplica a sessão
+    ;(await send(today(), '08:20')).assertStatus(200)
+    const after = await roster(today())
+    assert.equal(after.start_time, '08:20')
+    assert.equal(after.last_start_time, '08:20')
+    assert.equal((await roster(daysAgo(1))).start_time, '07:30')
+    assert.equal(await countRows(AttendanceSession.query()), 2)
+  })
+
   test('recusa horário de chegada inválido', async ({ client }) => {
     const { classroom, preceptor, a } = await setup()
     for (const arrival_time of ['25:00', '7:45', '07:60', 'abc']) {
@@ -85,6 +150,7 @@ test.group('Frequência (RF-05)', (group) => {
         .put(`${API}/attendances/bulk`)
         .loginAs(preceptor)
         .json({
+          start_time: '07:30',
           classroom_id: classroom.id,
           date: today(),
           records: [{ student_id: a.id, status: 'late', arrival_time }],
@@ -103,6 +169,7 @@ test.group('Frequência (RF-05)', (group) => {
         .put(`${API}/attendances/bulk`)
         .loginAs(preceptor)
         .json({
+          start_time: '07:30',
           classroom_id: classroom.id,
           date: today(),
           records: [{ student_id: a.id, status }],
@@ -129,25 +196,35 @@ test.group('Frequência (RF-05)', (group) => {
       await client
         .put(`${API}/attendances/bulk`)
         .loginAs(preceptor)
-        .json({ ...base, records: [{ student_id: stranger.id, status: 'present' }] })
-    ).assertStatus(422)
-    ;(
-      await client
-        .put(`${API}/attendances/bulk`)
-        .loginAs(preceptor)
-        .json({ ...base, date: '2999-01-01', records: [{ student_id: a.id, status: 'present' }] })
-    ).assertStatus(422)
-    ;(
-      await client
-        .put(`${API}/attendances/bulk`)
-        .loginAs(preceptor)
-        .json({ ...base, records: [] })
+        .json({
+          start_time: '07:30',
+          ...base,
+          records: [{ student_id: stranger.id, status: 'present' }],
+        })
     ).assertStatus(422)
     ;(
       await client
         .put(`${API}/attendances/bulk`)
         .loginAs(preceptor)
         .json({
+          start_time: '07:30',
+          ...base,
+          date: '2999-01-01',
+          records: [{ student_id: a.id, status: 'present' }],
+        })
+    ).assertStatus(422)
+    ;(
+      await client
+        .put(`${API}/attendances/bulk`)
+        .loginAs(preceptor)
+        .json({ start_time: '07:30', ...base, records: [] })
+    ).assertStatus(422)
+    ;(
+      await client
+        .put(`${API}/attendances/bulk`)
+        .loginAs(preceptor)
+        .json({
+          start_time: '07:30',
           ...base,
           records: [
             { student_id: a.id, status: 'present' },
@@ -159,7 +236,7 @@ test.group('Frequência (RF-05)', (group) => {
       await client
         .put(`${API}/attendances/bulk`)
         .loginAs(preceptor)
-        .json({ ...base, records: [{ student_id: a.id, status: 'banana' }] })
+        .json({ start_time: '07:30', ...base, records: [{ student_id: a.id, status: 'banana' }] })
     ).assertStatus(422)
   })
 
@@ -172,6 +249,7 @@ test.group('Frequência (RF-05)', (group) => {
         .put(`${API}/attendances/bulk`)
         .loginAs(outsider)
         .json({
+          start_time: '07:30',
           classroom_id: classroom.id,
           date: today(),
           records: [{ student_id: a.id, status: 'present' }],
@@ -184,6 +262,7 @@ test.group('Frequência (RF-05)', (group) => {
         .put(`${API}/attendances/bulk`)
         .loginAs(preceptor)
         .json({
+          start_time: '07:30',
           classroom_id: classroom.id,
           date: today(),
           records: [{ student_id: a.id, status: 'present' }],
@@ -205,6 +284,7 @@ test.group('Frequência (RF-05)', (group) => {
         .put(`${API}/attendances/bulk`)
         .loginAs(preceptor)
         .json({
+          start_time: '07:30',
           classroom_id: classroom.id,
           date,
           records: [
