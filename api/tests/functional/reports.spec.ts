@@ -181,7 +181,7 @@ test.group('Histórico e relatórios (CA03, CA04, CA05, RN05, RN06, RN07)', (gro
       .json({
         classroom_id: classroom.id,
         date: daysAgo(1),
-        records: [{ student_id: student.id, status: 'late', minutes_late: 15 }],
+        records: [{ student_id: student.id, status: 'late', arrival_time: '07:45' }],
       })
     await client
       .post(`${API}/notifications`)
@@ -193,7 +193,6 @@ test.group('Histórico e relatórios (CA03, CA04, CA05, RN05, RN06, RN07)', (gro
       .totals
     assert.equal(t.attendance.absent, 1)
     assert.equal(t.attendance.late, 1, 'atraso não é contado como falta')
-    assert.equal(t.attendance.minutes_late, 15)
     assert.equal(t.notifications.total, 1)
     assert.equal(t.occurrences.total, 1)
   })

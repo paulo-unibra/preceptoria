@@ -49,7 +49,7 @@ export function itemDescription(item: TimelineItem): string {
   const d = item.data
   switch (item.type) {
     case 'attendance':
-      return `${ATTENDANCE_LABELS[d.status] ?? d.status}${d.minutes_late ? ` (${d.minutes_late} min)` : ''}${d.is_justified ? ' - justificada' : ''}${d.note ? ` - ${d.note}` : ''}`
+      return `${ATTENDANCE_LABELS[d.status] ?? d.status}${d.arrival_time ? ` (chegada ${d.arrival_time})` : ''}${d.is_justified ? ' - justificada' : ''}${d.note ? ` - ${d.note}` : ''}`
     case 'uniform_check':
       return `Fardamento: ${CHECKLIST_LABELS[d.uniform_status]}; Calçado: ${CHECKLIST_LABELS[d.footwear_status]}${d.note ? ` - ${d.note}` : ''}`
     case 'occurrence':

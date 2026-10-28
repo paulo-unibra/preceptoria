@@ -29,8 +29,8 @@ export default class AttendancesController {
       records,
       (r) => ({
         status: r.status,
-        // Atraso só faz sentido para status "late"; justificativa só para falta.
-        minutesLate: r.status === 'late' ? (r.minutes_late ?? null) : null,
+        // Horário de chegada só faz sentido para status "late"; justificativa só para falta.
+        arrivalTime: r.status === 'late' ? (r.arrival_time ?? null) : null,
         isJustified: r.status === 'absent' ? (r.is_justified ?? false) : false,
         note: r.note ?? null,
       })

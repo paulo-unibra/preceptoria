@@ -39,7 +39,7 @@ test.group('Frequência (RF-05)', (group) => {
         records: [
           { student_id: a.id, status: 'present' },
           { student_id: b.id, status: 'absent', is_justified: true, note: 'Atestado médico' },
-          { student_id: c.id, status: 'late', minutes_late: 15 },
+          { student_id: c.id, status: 'late', arrival_time: '07:45' },
         ],
       })
     res.assertStatus(200)
@@ -53,10 +53,10 @@ test.group('Frequência (RF-05)', (group) => {
     )
     assert.equal(byName.Ana.status, 'present')
     assert.isTrue(byName.Bruno.is_justified)
-    assert.equal(byName.Carla.minutes_late, 15)
+    assert.equal(byName.Carla.arrival_time, '07:45')
   })
 
-  test('minutos de atraso só valem para atraso e justificativa só para falta', async ({
+  test('horário de chegada só vale para atraso e justificativa só para falta', async ({
     client,
     assert,
   }) => {
@@ -68,14 +68,29 @@ test.group('Frequência (RF-05)', (group) => {
         classroom_id: classroom.id,
         date: today(),
         records: [
-          { student_id: a.id, status: 'present', minutes_late: 30, is_justified: true },
-          { student_id: b.id, status: 'absent', minutes_late: 30 },
+          { student_id: a.id, status: 'present', arrival_time: '07:30', is_justified: true },
+          { student_id: b.id, status: 'absent', arrival_time: '07:30' },
         ],
       })
     const rows = await Attendance.query().orderBy('student_id')
-    assert.isNull(rows[0].minutesLate)
+    assert.isNull(rows[0].arrivalTime)
     assert.isFalse(rows[0].isJustified)
-    assert.isNull(rows[1].minutesLate)
+    assert.isNull(rows[1].arrivalTime)
+  })
+
+  test('recusa horário de chegada inválido', async ({ client }) => {
+    const { classroom, preceptor, a } = await setup()
+    for (const arrival_time of ['25:00', '7:45', '07:60', 'abc']) {
+      const res = await client
+        .put(`${API}/attendances/bulk`)
+        .loginAs(preceptor)
+        .json({
+          classroom_id: classroom.id,
+          date: today(),
+          records: [{ student_id: a.id, status: 'late', arrival_time }],
+        })
+      res.assertStatus(422)
+    }
   })
 
   test('reenviar a chamada corrige o registro (sem duplicar) e guarda o valor anterior na auditoria', async ({

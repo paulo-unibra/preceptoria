@@ -48,7 +48,6 @@ export interface Totals {
     absent: number
     absent_justified: number
     late: number
-    minutes_late: number
   }
   uniform: {
     records: number
@@ -122,7 +121,6 @@ export function emptyTotals(): Totals {
       absent: 0,
       absent_justified: 0,
       late: 0,
-      minutes_late: 0,
     },
     uniform: {
       records: 0,
@@ -155,7 +153,6 @@ export function summarize(records: Records): Totals {
       if (a.isJustified) t.attendance.absent_justified++
     } else if (a.status === 'late') {
       t.attendance.late++
-      t.attendance.minutes_late += a.minutesLate ?? 0
     }
   }
 

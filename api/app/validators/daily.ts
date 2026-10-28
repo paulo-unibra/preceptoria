@@ -19,7 +19,12 @@ export const bulkAttendanceValidator = vine.compile(
         vine.object({
           student_id: vine.number().positive(),
           status: vine.enum(ATTENDANCE_STATUSES),
-          minutes_late: vine.number().min(1).max(600).optional().nullable(),
+          arrival_time: vine
+            .string()
+            .trim()
+            .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
+            .optional()
+            .nullable(),
           is_justified: vine.boolean().optional(),
           note: text(500).optional().nullable(),
         })

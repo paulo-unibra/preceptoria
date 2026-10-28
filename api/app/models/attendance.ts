@@ -25,7 +25,7 @@ export default class Attendance extends AuditedModel {
   declare status: AttendanceStatus
 
   @column()
-  declare minutesLate: number | null
+  declare arrivalTime: string | null
 
   @booleanColumn()
   declare isJustified: boolean
