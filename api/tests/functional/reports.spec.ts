@@ -459,7 +459,10 @@ test.group('Histórico e relatórios (CA03, CA04, CA05, RN05, RN06, RN07)', (gro
     pdf.assertStatus(200)
     assert.include(pdf.header('content-type'), 'application/pdf')
     assert.include(pdf.header('content-disposition'), `registros-do-dia-7-a-${today()}.pdf`)
-    const text = pdfText(await PdfService.dayReport(r))
+    const buffer = await PdfService.dayReport(r)
+    // rodapé dentro da margem: relatório curto cabe em 1 página (sem página extra só com rodapé)
+    assert.equal((buffer.toString('latin1').match(/\/Type \/Page\b/g) ?? []).length, 1)
+    const text = pdfText(buffer)
     for (const expected of [
       'Registros do dia',
       '07:15',

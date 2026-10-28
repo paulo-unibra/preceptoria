@@ -204,6 +204,9 @@ class Writer {
     const range = this.doc.bufferedPageRange()
     for (let i = 0; i < range.count; i++) {
       this.doc.switchToPage(range.start + i)
+      // O rodapé fica dentro da margem inferior: sem zerá-la, o pdfkit abre uma página nova só para ele.
+      const bottom = this.doc.page.margins.bottom
+      this.doc.page.margins.bottom = 0
       this.doc.font('Helvetica').fontSize(8).fillColor(BRAND.textSecondary)
       this.doc.text(
         `Gerado em ${new Date().toLocaleString('pt-BR')}  •  Página ${i + 1} de ${range.count}`,
@@ -211,6 +214,7 @@ class Writer {
         815,
         { width: this.doc.page.width - MARGIN * 2, align: 'center', lineBreak: false }
       )
+      this.doc.page.margins.bottom = bottom
     }
   }
 
