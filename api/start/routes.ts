@@ -18,6 +18,7 @@ const UniformChecksController = () => import('#controllers/uniform_checks_contro
 const LessonDaysController = () => import('#controllers/lesson_days_controller')
 const OccurrencesController = () => import('#controllers/occurrences_controller')
 const RaCodesController = () => import('#controllers/ra_codes_controller')
+const PagesController = () => import('#controllers/pages_controller')
 const NotificationsController = () => import('#controllers/notifications_controller')
 const ReferralsController = () => import('#controllers/referrals_controller')
 const ObservationsController = () => import('#controllers/observations_controller')
@@ -30,6 +31,7 @@ const adminOnly = middleware.role({ roles: ['admin'] })
 const staff = middleware.role({ roles: ['admin', 'coordenacao'] })
 
 router.get('/', async () => ({ name: 'Preceptoria - Acompanhamento Escolar API', version: 'v1' }))
+router.get('/privacidade', [PagesController, 'privacy'])
 router.get('/health', async () => {
   await db.rawQuery('select 1')
   return { status: 'ok' }
