@@ -7,20 +7,57 @@ import '@/global.css';
 
 import { Platform } from 'react-native';
 
+/**
+ * Paleta derivada da logo da Secretaria de Educação de Itapissuma-PE
+ * (assets/images/logo.jpeg): azul-marinho do anel, azul-céu e verde do brasão,
+ * marrom do escudo. Mantenha em sincronia com api/app/support/brand.ts.
+ */
+export const Brand = {
+  navy: '#141B47',
+  navyDark: '#080D30',
+  blue: '#3C549C',
+  sky: '#549CCC',
+  skyLight: '#BCD0D7',
+  green: '#2F9A55',
+  brown: '#6C4A3C',
+  white: '#FFFFFF',
+  offWhite: '#F6F6F8',
+  // Semânticas para registros (RAs positivos x negativos)
+  positive: '#2F9A55',
+  negative: '#B3402F',
+  warning: '#B7791F',
+} as const;
+
 export const Colors = {
   light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
+    text: '#0B1033',
+    background: '#FFFFFF',
+    backgroundElement: '#F6F6F8',
+    backgroundSelected: '#DDE5F0',
+    textSecondary: '#4A5170',
+    primary: Brand.navy,
+    onPrimary: '#FFFFFF',
+    secondary: Brand.sky,
+    accent: Brand.brown,
+    success: Brand.positive,
+    danger: Brand.negative,
+    warning: Brand.warning,
+    border: '#D5DAE6',
   },
   dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
+    text: '#F6F6F8',
+    background: '#080D30',
+    backgroundElement: '#141B47',
+    backgroundSelected: '#243066',
+    textSecondary: '#BCD0D7',
+    primary: Brand.sky,
+    onPrimary: '#080D30',
+    secondary: Brand.skyLight,
+    accent: '#C49A85',
+    success: '#4CC47A',
+    danger: '#E8735F',
+    warning: '#E0A63A',
+    border: '#2A3566',
   },
 } as const;
 
