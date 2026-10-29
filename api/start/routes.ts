@@ -32,6 +32,7 @@ const staff = middleware.role({ roles: ['admin', 'coordenacao'] })
 
 router.get('/', async () => ({ name: 'Preceptoria - Acompanhamento Escolar API', version: 'v1' }))
 router.get('/privacidade', [PagesController, 'privacy'])
+router.get('/exclusao-de-conta', [PagesController, 'accountDeletion'])
 router.get('/health', async () => {
   await db.rawQuery('select 1')
   return { status: 'ok' }

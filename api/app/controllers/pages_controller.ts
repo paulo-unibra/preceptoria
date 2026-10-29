@@ -69,7 +69,7 @@ const html = `<!doctype html>
 <p>Os dados são mantidos enquanto forem necessários ao acompanhamento escolar e às obrigações legais. A correção ou exclusão de dados pode ser solicitada conforme a seção 8.</p>
 
 <h2>8. Direitos do titular</h2>
-<p>Nos termos do art. 18 da LGPD, o titular (ou o responsável legal, no caso de crianças e adolescentes) pode solicitar: confirmação de tratamento, acesso, correção, anonimização, bloqueio ou eliminação de dados, portabilidade e informações sobre compartilhamento. As solicitações devem ser feitas à ${ORG_NAME} ou pelo contato abaixo.</p>
+<p>Nos termos do art. 18 da LGPD, o titular (ou o responsável legal, no caso de crianças e adolescentes) pode solicitar: confirmação de tratamento, acesso, correção, anonimização, bloqueio ou eliminação de dados, portabilidade e informações sobre compartilhamento. As solicitações devem ser feitas à ${ORG_NAME} ou pelo contato abaixo. Para pedir a exclusão de conta e dados, veja a página <a href="/exclusao-de-conta">Exclusão de conta e dados</a>.</p>
 
 <h2>9. Alterações desta política</h2>
 <p>Esta política pode ser atualizada. A data da última revisão consta no topo desta página.</p>
@@ -80,9 +80,74 @@ const html = `<!doctype html>
 </body>
 </html>`
 
+const deletionHtml = `<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exclusão de conta e dados - Preceptoria</title>
+<style>
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:${BRAND.navyDark};line-height:1.6;margin:0;background:${BRAND.offWhite}}
+  header{background:${BRAND.navy};color:#fff;padding:28px 20px}
+  header h1{margin:0;font-size:1.5rem} header p{margin:6px 0 0;color:${BRAND.skyLight}}
+  main{max-width:820px;margin:0 auto;padding:24px 20px 48px}
+  h2{color:${BRAND.navy};margin-top:2rem;border-bottom:2px solid ${BRAND.sky};padding-bottom:4px;font-size:1.15rem}
+  ul,ol{padding-left:1.3rem} li{margin:.3rem 0}
+  .note{background:#fff;border:1px solid ${BRAND.border};border-radius:10px;padding:12px 16px}
+  a{color:${BRAND.blue}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Exclusão de conta e dados</h1>
+  <p>Aplicativo <strong>Preceptoria</strong> · ${APP_NAME} · Última atualização: ${UPDATED_AT}</p>
+</header>
+<main>
+<p>Esta página explica como solicitar a exclusão da sua conta e dos dados pessoais tratados pelo aplicativo <strong>Preceptoria</strong>, operado em benefício da <strong>${ORG_NAME}</strong>. As contas do aplicativo são criadas pela administração escolar; não há cadastro aberto ao público.</p>
+
+<h2>Como solicitar</h2>
+<ol>
+  <li>Envie um e-mail para <a href="mailto:${CONTACT_EMAIL}?subject=Exclus%C3%A3o%20de%20dados%20-%20Preceptoria">${CONTACT_EMAIL}</a> com o assunto <strong>“Exclusão de dados - Preceptoria”</strong>.</li>
+  <li>Informe seu nome completo e o e-mail da conta no aplicativo. Se o pedido for sobre um <strong>estudante</strong>, informe o nome do estudante, a turma e que você é o responsável legal.</li>
+  <li>Descreva o que deseja: excluir apenas a conta de acesso, ou também dados e registros associados.</li>
+  <li>Vamos confirmar sua identidade (por resposta ao e-mail da conta ou pela escola) e responder em até <strong>15 dias</strong>.</li>
+</ol>
+<p>Você também pode fazer o pedido diretamente à ${ORG_NAME} ou à direção da escola, que nos encaminhará a solicitação.</p>
+
+<h2>Dados excluídos</h2>
+<ul>
+  <li><strong>Conta de profissional:</strong> nome, e-mail, senha (armazenada apenas como hash), perfil e vínculos com turmas.</li>
+  <li><strong>Dados de estudante</strong> (a pedido do responsável legal ou da Secretaria): nome, matrícula, data de nascimento, foto e observações de acompanhamento.</li>
+  <li><strong>Dados de responsáveis:</strong> nome, parentesco e telefone.</li>
+  <li><strong>Registros escolares associados:</strong> frequência, atrasos, fardamento, aulas, registros acadêmicos (RA), notificações, encaminhamentos e observações.</li>
+</ul>
+
+<h2>Dados que podem ser mantidos</h2>
+<ul>
+  <li><strong>Registros que a escola é obrigada por lei ou por norma a conservar</strong> (histórico escolar e documentos de acompanhamento exigidos pela Secretaria), pelo prazo legal.</li>
+  <li><strong>Registro de auditoria</strong> (quem alterou o quê e quando), mantido sem identificar a pessoa excluída, para garantir a integridade e a segurança dos registros.</li>
+</ul>
+
+<h2>Prazos</h2>
+<ul>
+  <li>Exclusão dos dados no sistema: até 15 dias após a confirmação do pedido.</li>
+  <li>Cópias de segurança: são mantidas apenas as 14 mais recentes e renovadas diariamente; os dados excluídos saem delas em até 14 dias.</li>
+</ul>
+
+<h2>Contato</h2>
+<p class="note">Dúvidas sobre este processo: <a href="mailto:${CONTACT_EMAIL}">${CONTACT_EMAIL}</a>. Veja também a <a href="/privacidade">Política de Privacidade</a>.</p>
+</main>
+</body>
+</html>`
+
 export default class PagesController {
   /** Política de privacidade pública (exigida pela Google Play). */
   async privacy({ response }: HttpContext) {
     return response.header('Content-Type', 'text/html; charset=utf-8').send(html)
+  }
+
+  /** Página pública de exclusão de conta e dados (exigida pela Google Play). */
+  async accountDeletion({ response }: HttpContext) {
+    return response.header('Content-Type', 'text/html; charset=utf-8').send(deletionHtml)
   }
 }
