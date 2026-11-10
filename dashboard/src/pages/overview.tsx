@@ -1,0 +1,313 @@
+import { lazy, Suspense } from "react";
+import { Link, useSearchParams } from "react-router";
+import {
+  ArrowDownRight,
+  ArrowRight,
+  ArrowUpRight,
+  BookOpen,
+  ClipboardCheck,
+  GraduationCap,
+  HeartHandshake,
+  Users,
+} from "lucide-react";
+import { useFilters } from "@/lib/filters";
+import { buildTimeline, summarizeReports } from "@/lib/analytics";
+import { number, percentage } from "@/lib/utils";
+import { useReports } from "@/hooks/use-reports";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  EmptyState,
+  ErrorState,
+  Loading,
+  PageSkeleton,
+} from "@/components/feedback";
+import { PanelHeading } from "@/components/page-heading";
+
+const AttendanceChart = lazy(() =>
+  import("@/components/analytics-charts").then((module) => ({
+    default: module.AttendanceChart,
+  })),
+);
+const OccurrenceChart = lazy(() =>
+  import("@/components/analytics-charts").then((module) => ({
+    default: module.OccurrenceChart,
+  })),
+);
+
+export default function Overview() {
+  const { reports, loading, error, retry } = useReports();
+  const { classrooms, classroomId, from, to } = useFilters();
+  const [params] = useSearchParams();
+  if (loading) return <PageSkeleton />;
+  if (error) return <ErrorState error={error} retry={retry} />;
+  if (!reports.length)
+    return (
+      <Card className="glass">
+        <EmptyState
+          title="Nenhuma turma disponível"
+          description="Solicite à administração o vínculo às turmas que você acompanha."
+        />
+      </Card>
+    );
+  const totals = summarizeReports(reports);
+  const students = classrooms
+    .filter((item) => !classroomId || String(item.id) === classroomId)
+    .reduce((sum, item) => sum + (item.students_count ?? 0), 0);
+  const timeline = buildTimeline(reports, from, to);
+  const metrics = [
+    {
+      label: "Estudantes acompanhados",
+      value: number(students),
+      caption: `${reports.length} turma${reports.length === 1 ? "" : "s"} no seu olhar`,
+      icon: Users,
+      trend: "Matrículas ativas",
+      tone: "neutral",
+    },
+    {
+      label: "Frequência no período",
+      value: totals.attendanceRate === null ? "—" : `${totals.attendanceRate}%`,
+      caption: `${number(totals.present)} de ${number(totals.attendance)} registros`,
+      icon: ClipboardCheck,
+      trend: "Inclui atrasos",
+      tone: "mint",
+    },
+    {
+      label: "Registros acadêmicos",
+      value: number(totals.occurrences),
+      caption: `${number(totals.positive)} positivos · ${number(totals.negative)} negativos`,
+      icon: BookOpen,
+      trend: "RAs ativos",
+      tone: "neutral",
+    },
+    {
+      label: "Encaminhamentos em aberto",
+      value: number(totals.referrals),
+      caption: `${number(totals.review)} RA(s) aguardando revisão`,
+      icon: HeartHandshake,
+      trend: "Acompanhamento contínuo",
+      tone: "neutral",
+    },
+  ];
+  return (
+    <div className="space-y-4">
+      <section
+        aria-label="Indicadores do período"
+        className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+      >
+        {metrics.map(({ label, value, caption, icon: Icon, trend, tone }) => (
+          <Card
+            key={label}
+            data-tone={tone}
+            className="glass kpi-card gap-0 p-4"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[10px] font-medium text-[#5f5145]">{label}</p>
+              <div className="kpi-icon">
+                <Icon className="size-3.5" strokeWidth={1.7} />
+              </div>
+            </div>
+            <strong className="mt-3 text-[29px] leading-none font-medium tracking-[-0.055em]">
+              {value}
+            </strong>
+            <p className="mt-2 text-[10px] text-[#65584c]">{caption}</p>
+            <div className="kpi-footnote">
+              <span className="metric-chip">
+                <span className="size-1 rounded-full bg-[#537c67]" />
+              </span>
+              {trend}
+            </div>
+          </Card>
+        ))}
+      </section>
+      <div className="grid gap-4 xl:grid-cols-[1.7fr_1fr]">
+        <Card className="glass overview-chart min-w-0 gap-0">
+          <PanelHeading
+            title="Presença que faz a diferença"
+            description="Evolução diária dos registros de frequência"
+            action={
+              <span className="status-pill">
+                {totals.attendance
+                  ? "Frequência registrada"
+                  : "Sem chamada no período"}
+              </span>
+            }
+          />
+          <div className="mb-1 flex gap-5 text-[11px] text-muted-foreground">
+            <span className="flex items-center gap-2">
+              <i className="size-1.5 rounded-full bg-[#e77656]" />
+              Presenças
+            </span>
+            <span className="flex items-center gap-2">
+              <i className="size-1.5 rounded-full bg-[#625a50]" />
+              Faltas
+            </span>
+          </div>
+          {totals.attendance ? (
+            <Suspense fallback={<Loading />}>
+              <AttendanceChart data={timeline} />
+            </Suspense>
+          ) : (
+            <EmptyState
+              title="A chamada ainda não foi registrada"
+              description="Assim que houver registros de frequência, a evolução aparecerá aqui."
+            />
+          )}
+        </Card>
+        <Card className="glass overview-chart gap-0">
+          <PanelHeading
+            title="Um olhar sobre os RAs"
+            description="Distribuição dos registros acadêmicos"
+          />
+          <Suspense fallback={<Loading />}>
+            <OccurrenceChart
+              positive={totals.positive}
+              negative={totals.negative}
+            />
+          </Suspense>
+        </Card>
+      </div>
+      <Card className="glass gap-0 overflow-hidden p-0">
+        <div className="px-6 pt-6">
+          <PanelHeading
+            title="Suas turmas, mais perto"
+            description="Indicadores consolidados do período selecionado"
+            action={
+              <Button asChild variant="ghost" className="text-xs text-primary">
+                <Link
+                  to={{ pathname: "/relatorios", search: params.toString() }}
+                >
+                  Explorar relatórios
+                  <ArrowRight className="size-3.5" />
+                </Link>
+              </Button>
+            }
+          />
+        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="pl-6">Turma</TableHead>
+              <TableHead>Frequência</TableHead>
+              <TableHead>RAs positivos</TableHead>
+              <TableHead>RAs negativos</TableHead>
+              <TableHead>Aulas registradas</TableHead>
+              <TableHead className="pr-6 text-right">Acompanhamento</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {reports.map((report) => {
+              const attendance = report.totals.attendance;
+              const rate = percentage(
+                attendance.present + attendance.late,
+                attendance.records,
+              );
+              const pending =
+                report.totals.referrals.open +
+                report.totals.referrals.in_progress;
+              const studentParams = new URLSearchParams(params);
+              studentParams.set("classroom", String(report.classroom.id));
+              return (
+                <TableRow key={report.classroom.id}>
+                  <TableCell className="py-4 pl-6">
+                    <Link
+                      to={{
+                        pathname: "/estudantes",
+                        search: studentParams.toString(),
+                      }}
+                      className="group flex items-center gap-3"
+                    >
+                      <span className="soft-icon">
+                        <GraduationCap className="size-4" />
+                      </span>
+                      <span>
+                        <strong className="text-xs font-semibold group-hover:text-primary">
+                          {report.classroom.name}
+                        </strong>
+                        <span className="mt-1 block text-[10px] text-muted-foreground">
+                          Ano letivo {report.classroom.school_year}
+                        </span>
+                      </span>
+                    </Link>
+                  </TableCell>
+                  <TableCell>
+                    <div className="w-24">
+                      <span className="text-xs font-medium">
+                        {rate === null ? "Sem registros" : `${rate}%`}
+                      </span>
+                      <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-white/40">
+                        <div
+                          className="h-full rounded-full bg-[#449e87]/80"
+                          style={{ width: `${rate ?? 0}%` }}
+                        />
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700">
+                      <ArrowUpRight className="size-3.5" />
+                      {number(report.totals.occurrences.positive)}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="inline-flex items-center gap-1.5 text-xs text-[#b75f47]">
+                      <ArrowDownRight className="size-3.5" />
+                      {number(report.totals.occurrences.negative)}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-xs">
+                    {number(report.lessons.registered_lessons)}
+                  </TableCell>
+                  <TableCell className="pr-6 text-right">
+                    <Badge
+                      variant="secondary"
+                      className={
+                        pending
+                          ? "bg-amber-50 text-amber-800"
+                          : "bg-white/45 text-[#65584c]"
+                      }
+                    >
+                      {pending
+                        ? `${pending} encaminhamento(s)`
+                        : "Sem encaminhamentos abertos"}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </Card>
+      <div className="glass overview-note">
+        <div className="flex items-center gap-3">
+          <span className="soft-icon">
+            <HeartHandshake className="size-5" />
+          </span>
+          <div>
+            <h3 className="text-xs font-semibold">
+              Por trás de cada dado, uma trajetória.
+            </h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Use os indicadores para aproximar, acolher e acompanhar.
+            </p>
+          </div>
+        </div>
+        <Button asChild variant="ghost" className="text-xs text-primary">
+          <Link to={{ pathname: "/estudantes", search: params.toString() }}>
+            Conhecer as trajetórias
+            <ArrowRight className="size-3.5" />
+          </Link>
+        </Button>
+      </div>
+    </div>
+  );
+}

@@ -19,6 +19,7 @@
   ],
   "exclude": [
     "api",
+    "dashboard",
     "node_modules"
   ]
 }

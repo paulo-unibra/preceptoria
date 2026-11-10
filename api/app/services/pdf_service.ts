@@ -179,7 +179,7 @@ class Writer {
       let x = MARGIN
       doc.save()
       doc.roundedRect(MARGIN, y, width, 10, 5).clip()
-      for (const s of segments.filter((s) => s.value > 0)) {
+      for (const s of segments.filter((segment) => segment.value > 0)) {
         const w = (s.value / total) * width
         doc.rect(x, y, w, 10).fill(s.color)
         x += w

@@ -54,6 +54,7 @@ Autenticação por `Authorization: Bearer <token>` (exceto o login).
 | Área | Rotas |
 |---|---|
 | Auth | `POST auth/login` · `POST auth/logout` · `GET auth/me` · `PUT auth/password` |
+| Importação (admin) | `GET/POST imports/students` · `GET imports/students/:id` · `GET students/:id/imported-profile` |
 | Usuários (admin) | `GET/POST users` · `GET/PATCH users/:id` · `PUT users/:id/classrooms` |
 | Turmas / enturmação | `GET classrooms` · `GET classrooms/:id` · `GET classrooms/:id/students` · `POST/PATCH` (admin) |
 | Estudantes / ficha | `GET students?q=&classroom_id=` · `GET students/:id` · `GET students/:id/photo` · admin: `POST/PATCH students`, `POST students/:id/photo`, `POST/PATCH students/:id/guardians` |
@@ -71,6 +72,31 @@ Autenticação por `Authorization: Bearer <token>` (exceto o login).
 | Configurações (admin) | `GET settings` · `PUT settings/ranking` · `PUT settings/privacy` · `PATCH ra-codes/:code` |
 
 Erros seguem sempre `{ "errors": [{ "message": "...", "code": "E_...", "field": "..." }] }`.
+
+## Importação de fichas de estudantes (SGGE / Sicap)
+
+Disponível no dashboard em **Importações**, para administradores. Execute `node ace migration:run` após atualizar a API. A extração usa `pdfjs-dist` e `@napi-rs/canvas`, instalados pelo `npm ci`, sem Python ou serviço externo.
+
+```bash
+curl -X POST http://localhost:3333/api/v1/imports/students \
+  -H "Authorization: Bearer $TOKEN" \
+  -F 'file=@FICHA DO ESTUDANTE_9º ANO A.pdf'
+```
+
+- Multipart no campo `file`: PDF de **até 20 MB e 300 páginas**, com texto selecionável, no modelo de ficha SGGE/Sicap. PDFs protegidos, digitalizados sem OCR, incompletos ou com matrículas repetidas são rejeitados antes da gravação.
+- A turma vem do sufixo do arquivo (`_9º ANO A`, `_9° ANO A`); o **ano letivo vem do conteúdo do PDF**. O sistema reutiliza turmas equivalentes, como `9° A`, no mesmo ano, ou cria a turma. Turmas inativas ou ambíguas são sinalizadas.
+- Cada ficha começa por matrícula e identificação, não por um número fixo de páginas. A posição do texto separa campos e colunas, preservando campos vazios e marcações de checkbox.
+- Nome, matrícula e nascimento alimentam o cadastro do estudante. Mãe, pai e responsáveis são vinculados sem repetir pessoas reconhecidas dentro da mesma ficha.
+- Identificação, filiação, responsáveis, dados pessoais, educação especial, endereço, documentação, Bolsa Família, contato, informações escolares, uniforme, alimentação/alergias e transporte são persistidos como **ficha estruturada**, com valores originais, avisos, páginas e texto de origem. Os snapshots ficam em `student_import_entries`; o histórico de arquivos e resultados fica em `student_imports`.
+- Datas sentinela/impossíveis, UF/CEP incorretos, documentos com zeros e contatos inválidos ficam sem valor normalizado e mantêm o original para conferência. Inconsistências do próprio formulário (por exemplo, rótulo “CPF” para peça do uniforme) são identificadas pelo contexto da seção.
+- A imagem é extraída da área de identificação, ignorando brasões e QR codes, convertida em JPEG com até 640 px no maior lado e salva no armazenamento privado já usado pelo app. Objetos de imagem acima de 4 megapixels não são decodificados, para limitar o consumo de memória; fotos não extraíveis geram aviso na ficha. Ficha sem foto permanece sem foto; foto já cadastrada é preservada.
+- Matrícula existente com outro nome ou turma gera **conflito**, sem sobrescrever ou reenturmar. Nos cadastros compatíveis, dados básicos/contatos já preenchidos e anotações manuais são preservados. Campos básicos ausentes podem ser completados; novos snapshots guardam a ficha enviada.
+- SHA-256 torna o reenvio do mesmo PDF idempotente: a resposta retorna `already_imported: true` e o resultado original. Um arquivo já importado não pode ser renomeado para enturmar os mesmos dados em outra turma.
+- A gravação usa transação; fotos recém-gravadas são removidas em caso de rollback. O serviço aceita uma importação por processo de cada vez. O processamento tem limite de 90 segundos para leitura e o dashboard aguarda até 150 segundos pela resposta.
+
+`GET imports/students` lista os últimos 20 arquivos; `GET imports/students/:id` recupera o resultado. `GET students/:id/imported-profile` retorna o último snapshot ou `profile: null`. Essas rotas exigem administração. A ficha completa não é incluída nas listagens gerais; a foto continua exigindo autenticação e as permissões de foto configuradas na API. Os PDFs recebidos são temporários: os dados/texto de origem e as fotos são preservados, mas o binário original não fica armazenado.
+
+O proxy de produção deve aceitar o multipart de 20 MB e permitir o tempo de processamento (recomendação: timeout de 180 segundos). Os backups devem incluir as tabelas de importação e o diretório privado de fotos.
 
 ## Regras de negócio e critérios de aceite → onde estão
 
@@ -98,7 +124,7 @@ Erros seguem sempre `{ "errors": [{ "message": "...", "code": "E_...", "field": 
 | DP04 | Quem corrige e como cancela? | Corrige/cancela **quem criou** (se ainda tem acesso à turma) **ou o admin**. Coordenação é somente leitura. Cancelamento **lógico**, com motivo obrigatório; nada é apagado |
 | DP05 | Descrição oficial dos códigos RA | **Não presumida**: `ra_codes.description` fica `null` até o admin informar. Só a polaridade (faixa) é fixa |
 | DP06 | Perfis e turmas | Três perfis acima; acesso por vínculo usuário↔turma. **Estudantes e responsáveis não têm acesso** |
-| DP07 | Importação de registros anteriores | **Fora do MVP.** O modelo já suporta `source = 'legacy'` com a sinalização de divergência para quando existir |
+| DP07 | Importação de registros anteriores | Fichas cadastrais SGGE/Sicap podem ser importadas pelo dashboard. Importação de ocorrências antigas continua pendente; o modelo suporta `source = 'legacy'` |
 | DP08 | Metas de desempenho/disponibilidade/recuperação | **A definir.** Backup implementado (abaixo); sem metas numéricas |
 
 Além disso, para "Etapa 3" do documento, **encaminhamentos** (RF-11) já estão incluídos, embora o MVP os deixe fora do compromisso inicial.
@@ -134,4 +160,4 @@ marrom `#6C4A3C`). A logo usada no PDF é `resources/logo.jpeg` (copiada no buil
 
 - Metas numéricas de desempenho/disponibilidade (DP08) e modelos oficiais de relatório da escola/município.
 - Gráficos e comparação entre períodos (RF-10) — a API já devolve totais por período; os gráficos ficam para o app.
-- Importação de registros antigos (DP07) e envio de notificações aos responsáveis (DP03).
+- Importação de ocorrências antigas (DP07), OCR para PDFs digitalizados e envio de notificações aos responsáveis (DP03).

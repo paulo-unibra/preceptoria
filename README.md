@@ -7,6 +7,7 @@ Itapissuma-PE, baseados no documento *"Preceptoria - Acompanhamento escolar"*.
 |---|---|
 | `src/` | App mobile/web (Expo Router, SDK 58) |
 | [`api/`](api/README.md) | API REST (AdonisJS 6): regras de negócio, auditoria, relatórios em PDF |
+| [`dashboard/`](dashboard/README.md) | Dashboard web React, Tailwind CSS e shadcn/ui, integrado à mesma API |
 
 ## Rodando
 

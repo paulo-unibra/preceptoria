@@ -26,6 +26,7 @@ const ReportsController = () => import('#controllers/reports_controller')
 const RankingController = () => import('#controllers/ranking_controller')
 const SettingsController = () => import('#controllers/settings_controller')
 const AuditLogsController = () => import('#controllers/audit_logs_controller')
+const StudentImportsController = () => import('#controllers/student_imports_controller')
 
 const adminOnly = middleware.role({ roles: ['admin'] })
 const staff = middleware.role({ roles: ['admin', 'coordenacao'] })
@@ -50,6 +51,12 @@ router
         router.put('auth/password', [AuthController, 'changePassword'])
 
         // Administração
+        router.get('imports/students', [StudentImportsController, 'index']).use(adminOnly)
+        router.post('imports/students', [StudentImportsController, 'store']).use(adminOnly)
+        router.get('imports/students/:id', [StudentImportsController, 'show']).use(adminOnly)
+        router
+          .get('students/:id/imported-profile', [StudentImportsController, 'profile'])
+          .use(adminOnly)
         router.get('users', [UsersController, 'index']).use(adminOnly)
         router.post('users', [UsersController, 'store']).use(adminOnly)
         router.get('users/:id', [UsersController, 'show']).use(adminOnly)
