@@ -27,6 +27,7 @@ const RankingController = () => import('#controllers/ranking_controller')
 const SettingsController = () => import('#controllers/settings_controller')
 const AuditLogsController = () => import('#controllers/audit_logs_controller')
 const StudentImportsController = () => import('#controllers/student_imports_controller')
+const StudentNfcCardsController = () => import('#controllers/student_nfc_cards_controller')
 
 const adminOnly = middleware.role({ roles: ['admin'] })
 const staff = middleware.role({ roles: ['admin', 'coordenacao'] })
@@ -78,6 +79,10 @@ router
         router.get('students', [StudentsController, 'index'])
         router.get('students/:id', [StudentsController, 'show'])
         router.get('students/:id/photo', [StudentsController, 'photo'])
+        router.get('students/:id/nfc-card', [StudentNfcCardsController, 'show'])
+        router.post('students/:id/nfc-card/prepare', [StudentNfcCardsController, 'prepare'])
+        router.post('students/:id/nfc-card/activate', [StudentNfcCardsController, 'activate'])
+        router.delete('students/:id/nfc-card', [StudentNfcCardsController, 'revoke'])
         router.post('students', [StudentsController, 'store']).use(adminOnly)
         router.patch('students/:id', [StudentsController, 'update']).use(adminOnly)
         router.post('students/:id/photo', [StudentsController, 'uploadPhoto']).use(adminOnly)
@@ -93,6 +98,7 @@ router
         router.get('attendances', [AttendancesController, 'index'])
         router.get('attendances/roster', [AttendancesController, 'roster'])
         router.put('attendances/bulk', [AttendancesController, 'bulk'])
+        router.post('attendances/nfc', [StudentNfcCardsController, 'attendance'])
 
         // RF-02 — checklist de fardamento e calçado
         router.get('uniform-checks', [UniformChecksController, 'index'])

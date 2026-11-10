@@ -10,7 +10,7 @@ import { useState } from "react";
 import { api, downloadReport } from "@/lib/api";
 import { useFilters } from "@/lib/filters";
 import type { Student, StudentHistory } from "@/lib/types";
-import { dateLabel, percentage } from "@/lib/utils";
+import { dateLabel, formatPhone, percentage } from "@/lib/utils";
 import { StudentPhoto } from "@/components/student-photo";
 import { ImportedProfile } from "@/components/imported-profile";
 import {
@@ -214,7 +214,7 @@ export function StudentDetail({
                           className="flex items-center gap-2 text-sm text-primary"
                         >
                           <Phone className="size-3.5" />
-                          {guardian.phone}
+                          {formatPhone(guardian.phone)}
                         </a>
                       )}
                     </div>

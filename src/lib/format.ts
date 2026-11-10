@@ -31,6 +31,11 @@ export function formatRaCode(code: number): string {
   return String(code).padStart(2, '0');
 }
 
+export function formatPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, '');
+  return digits.length === 11 ? digits.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3') : phone;
+}
+
 export function firstName(fullName: string): string {
   return fullName.split(' ')[0] ?? fullName;
 }

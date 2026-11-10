@@ -45,7 +45,7 @@ export default function ClassRosterScreen() {
           {students.map((s) => (
             <Pressable key={s.id} accessibilityRole="button" accessibilityLabel={`Abrir ficha de ${s.full_name}`} onPress={() => router.push(`/estudante/${s.id}`)}>
               <Card style={styles.row}>
-                <StudentAvatar id={s.id} name={s.full_name} />
+                <StudentAvatar id={s.id} name={s.full_name} hasPhoto={s.has_photo} />
                 <View style={styles.flex}>
                   <ThemedText type="smallBold">{s.full_name}</ThemedText>
                   <ThemedText type="caption" themeColor="textSecondary">

@@ -3,6 +3,7 @@ import { FileText } from "lucide-react";
 import { api } from "@/lib/api";
 import type { ImportedProfile as Profile } from "@/lib/import-types";
 import { useAuth } from "@/lib/auth";
+import { formatPhone } from "@/lib/utils";
 import { ErrorState, Loading } from "@/components/feedback";
 
 export function ImportedProfile({ studentId }: { studentId: number }) {
@@ -69,7 +70,9 @@ export function ImportedProfile({ studentId }: { studentId: number }) {
                       ? field.value
                         ? "Sim"
                         : "Não assinalado"
-                      : (field.value ?? "Não informado")}
+                      : typeof field.value === "string" && /^(celular|telefone)(_[0-9]+)?$/.test(field.key)
+                        ? formatPhone(field.value)
+                        : (field.value ?? "Não informado")}
                     {field.raw_value && field.raw_value !== field.value && (
                       <span className="mt-1 block text-[10px] text-muted-foreground">
                         No PDF: {field.raw_value}

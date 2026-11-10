@@ -1,0 +1,20 @@
+{
+  "cli": {
+    "version": ">=27.6.0",
+    "appVersionSource": "local"
+  },
+  "build": {
+    "apk": {
+      "distribution": "internal",
+      "credentialsSource": "local",
+      "node": "24.12.0",
+      "environment": "production",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://preceptoria.bibliafoco.com.br"
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    }
+  }
+}

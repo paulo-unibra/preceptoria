@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Preceptoria",
-    "slug": "Preceptor.IA",
+    "slug": "PreceptorIA",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -19,11 +19,14 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "br.com.preceptoria",
-      "versionCode": 1,
+      "versionCode": 2,
       "blockedPermissions": [
         "android.permission.SYSTEM_ALERT_WINDOW",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE"
+      ],
+      "permissions": [
+        "android.permission.NFC"
       ]
     },
     "web": {
@@ -41,11 +44,28 @@
         }
       ],
       "expo-secure-store",
-      "expo-sharing"
+      "expo-sharing",
+      [
+        "react-native-nfc-manager",
+        {
+          "nfcPermission": "Permitir que a Preceptoria grave cartões de estudantes e registre presença por NFC."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "a1514c8c-5283-40fc-bdbc-61cf8c284a7a"
+      }
+    },
+    "owner": "paulo_nlw"
   }
 }

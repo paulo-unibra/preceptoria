@@ -73,6 +73,22 @@ Autenticação por `Authorization: Bearer <token>` (exceto o login).
 
 Erros seguem sempre `{ "errors": [{ "message": "...", "code": "E_...", "field": "..." }] }`.
 
+## Cartões NFC
+
+Preceptores da turma e administradores podem cadastrar cartões na ficha do aluno e registrar presença pela chamada. Todas as rotas exigem autenticação e verificam as permissões e o aluno ativo; novos cadastros e presenças exigem turma ativa. Execute `node ace migration:run` após atualizar.
+
+| Rota | Operação |
+|---|---|
+| `GET students/:id/nfc-card` | Retorna somente `card.active` e `card.activated_at` |
+| `POST students/:id/nfc-card/prepare` | Emite `token` aleatório (64 caracteres hexadecimais), com `expires_in: 600`; só o SHA-256 é persistido |
+| `POST students/:id/nfc-card/activate` | Recebe `{ token }`, após gravar e verificar o NDEF; exige o mesmo profissional que preparou e é idempotente |
+| `DELETE students/:id/nfc-card` | Revoga cartão ativo e preparação pendente |
+| `POST attendances/nfc` | Recebe `{ token, classroom_id, date, start_time }`; retorna `student`, `attendance` e `already_recorded` |
+
+O NDEF é um registro de texto `preceptoria:nfc:v1:<token>`. Preparação não substitui cartão ativo; somente a ativação confirma a troca. O token não entra na auditoria nem nas consultas. Não registre corpos dessas requisições em logs ou ferramentas de monitoramento. Cartões NDEF comuns são copiáveis: o identificador não é prova criptográfica de posse do cartão original.
+
+A frequência NFC usa a mesma data não futura e horário inicial obrigatório da chamada manual. Salva presença ou corrige falta; preserva comparecimento/atraso previamente registrado e o horário já salvo da chamada. A transação bloqueia o aluno para serializar leituras NFC simultâneas e trocas/revogações. As alterações são auditadas com o usuário autenticado; a origem NFC aparece na auditoria de frequência. A API não aceita como prova o UID físico do cartão e não altera os outros estudantes da chamada.
+
 ## Importação de fichas de estudantes (SGGE / Sicap)
 
 Disponível no dashboard em **Importações**, para administradores. Execute `node ace migration:run` após atualizar a API. A extração usa `pdfjs-dist` e `@napi-rs/canvas`, instalados pelo `npm ci`, sem Python ou serviço externo.

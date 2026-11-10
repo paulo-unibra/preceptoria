@@ -4,12 +4,13 @@ import { Linking, Pressable, StyleSheet, View } from 'react-native';
 
 import { StudentAvatar, useCanWrite } from '@/components/domain';
 import { ThemedText } from '@/components/themed-text';
+import { StudentNfcCard } from '@/components/student-nfc-card';
 import { useToast } from '@/components/ui/toast';
 import { Badge, Button, Card, Chip, ChipRow, ErrorView, Loading, Screen, SectionTitle, StatTile } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useAsync } from '@/hooks/use-async';
 import { api } from '@/lib/api';
-import { addDays, formatDate, formatRaCode, SHIFT_LABELS, todayISO } from '@/lib/format';
+import { addDays, formatDate, formatPhone, formatRaCode, SHIFT_LABELS, todayISO } from '@/lib/format';
 import type { Student, StudentHistory, TimelineItem } from '@/lib/types';
 
 type Period = '7' | '30' | 'all';
@@ -112,6 +113,8 @@ export default function StudentScreen() {
         ) : null}
       </Card>
 
+      {canWrite ? <StudentNfcCard key={s.id} studentId={s.id} /> : null}
+
       <SectionTitle>Responsáveis</SectionTitle>
       {s.guardians?.length ? (
         s.guardians.map((g) => (
@@ -123,7 +126,7 @@ export default function StudentScreen() {
               </ThemedText>
               {g.phone ? (
                 <Pressable accessibilityRole="link" accessibilityLabel={`Ligar para ${g.full_name}`} onPress={() => Linking.openURL(`tel:${g.phone!.replace(/[^\d+]/g, '')}`)}>
-                  <ThemedText type="linkPrimary">{g.phone}</ThemedText>
+                  <ThemedText type="linkPrimary">{formatPhone(g.phone)}</ThemedText>
                 </Pressable>
               ) : (
                 <ThemedText type="caption" themeColor="textSecondary">

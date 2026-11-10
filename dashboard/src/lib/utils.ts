@@ -1,6 +1,8 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+export { formatPhone } from "../../../src/lib/format";
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }

@@ -3,6 +3,7 @@ import { StyleSheet, View } from "react-native";
 
 import { useCanWrite } from "@/components/domain";
 import { ThemedText } from "@/components/themed-text";
+import { NfcAttendanceButton } from "@/components/nfc-attendance-button";
 import {
   Button,
   Card,
@@ -73,6 +74,7 @@ export function AttendanceTab() {
   const [startTime, setStartTime] = useState("");
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [nfcBusy, setNfcBusy] = useState(false);
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(
     null,
   );
@@ -225,7 +227,7 @@ export function AttendanceTab() {
         <Field
           label="Hora de início da aula"
           value={startTime}
-          editable={canWrite}
+          editable={canWrite && !nfcBusy}
           keyboardType="number-pad"
           placeholder="HH:mm (ex.: 07:30)"
           maxLength={5}
@@ -252,6 +254,7 @@ export function AttendanceTab() {
               variant="secondary"
               small
               onPress={markAllPresent}
+              disabled={nfcBusy || saving}
               style={styles.flex}
             />
             <Button
@@ -259,7 +262,7 @@ export function AttendanceTab() {
               small
               onPress={save}
               loading={saving}
-              disabled={!dirty}
+              disabled={!dirty || nfcBusy}
               style={styles.flex}
             />
           </View>
@@ -268,6 +271,27 @@ export function AttendanceTab() {
             Seu perfil tem acesso somente de consulta.
           </ThemedText>
         )}
+        {canWrite && classroomId ? (
+          <NfcAttendanceButton
+            key={`${classroomId}:${date}`}
+            classroomId={classroomId}
+            date={date}
+            startTime={startTime}
+            disabled={saving}
+            onBusyChange={setNfcBusy}
+            onRecorded={(studentId, attendance) => {
+              setDraft((current) => ({
+                ...current,
+                [studentId]: {
+                  status: attendance.status,
+                  arrival: attendance.arrival_time ?? "",
+                  justified: attendance.is_justified,
+                  reason: attendance.note ?? "",
+                },
+              }));
+            }}
+          />
+        ) : null}
         {message ? (
           <ThemedText
             type="small"
@@ -319,7 +343,7 @@ export function AttendanceTab() {
                   label={o.label}
                   tone={o.tone}
                   selected={d?.status === o.status}
-                  disabled={!canWrite}
+                  disabled={!canWrite || nfcBusy || saving}
                   onPress={() => update(student.id, { status: o.status })}
                 />
               ))}
@@ -370,7 +394,7 @@ export function AttendanceTab() {
           label={dirty ? "Salvar frequência" : "Salvo"}
           onPress={save}
           loading={saving}
-          disabled={!dirty}
+          disabled={!dirty || nfcBusy}
         />
       ) : null}
     </View>

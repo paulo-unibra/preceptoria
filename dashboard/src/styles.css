@@ -158,7 +158,7 @@
     scrollbar-color: #7d68552e transparent;
   }
   .studio-rail {
-    @apply sticky top-8 flex-col items-center self-start pt-7;
+    @apply sticky top-8 z-40 flex-col items-center self-start pt-7;
   }
   .rail-logo {
     @apply mb-7 flex size-9 items-center justify-center text-[#51463c];
