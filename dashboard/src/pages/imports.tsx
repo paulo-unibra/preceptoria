@@ -25,7 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { EmptyState, ErrorState } from "@/components/feedback";
+import { EmptyState, ErrorState, Loading } from "@/components/feedback";
 import { PanelHeading } from "@/components/page-heading";
 import { StudentDetail } from "@/components/student-detail";
 
@@ -411,9 +411,7 @@ export default function Imports() {
             ))}
           </ul>
         ) : recent.isPending ? (
-          <p role="status" className="text-xs text-muted-foreground">
-            Carregando importações…
-          </p>
+          <Loading label="Carregando importações…" className="p-0" />
         ) : (
           <EmptyState
             title="Sua primeira importação começa aqui"

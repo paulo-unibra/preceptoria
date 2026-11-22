@@ -28,7 +28,7 @@ import {
 import {
   EmptyState,
   ErrorState,
-  Loading,
+  ChartSkeleton,
   PageSkeleton,
 } from "@/components/feedback";
 import { PanelHeading } from "@/components/page-heading";
@@ -68,72 +68,54 @@ export default function Overview() {
     {
       label: "Estudantes acompanhados",
       value: number(students),
-      caption: `${reports.length} turma${reports.length === 1 ? "" : "s"} no seu olhar`,
+      caption: `${reports.length} turma${reports.length === 1 ? "" : "s"} no filtro`,
       icon: Users,
-      trend: "Matrículas ativas",
-      tone: "neutral",
     },
     {
       label: "Frequência no período",
       value: totals.attendanceRate === null ? "—" : `${totals.attendanceRate}%`,
       caption: `${number(totals.present)} de ${number(totals.attendance)} registros`,
       icon: ClipboardCheck,
-      trend: "Inclui atrasos",
-      tone: "mint",
     },
     {
       label: "Registros acadêmicos",
       value: number(totals.occurrences),
       caption: `${number(totals.positive)} positivos · ${number(totals.negative)} negativos`,
       icon: BookOpen,
-      trend: "RAs ativos",
-      tone: "neutral",
     },
     {
       label: "Encaminhamentos em aberto",
       value: number(totals.referrals),
       caption: `${number(totals.review)} RA(s) aguardando revisão`,
       icon: HeartHandshake,
-      trend: "Acompanhamento contínuo",
-      tone: "neutral",
     },
   ];
   return (
     <div className="space-y-4">
       <section
         aria-label="Indicadores do período"
-        className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+        className="grid gap-3 min-[360px]:grid-cols-2 xl:grid-cols-4"
       >
-        {metrics.map(({ label, value, caption, icon: Icon, trend, tone }) => (
-          <Card
-            key={label}
-            data-tone={tone}
-            className="glass kpi-card gap-0 p-4"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-[10px] font-medium text-[#5f5145]">{label}</p>
+        {metrics.map(({ label, value, caption, icon: Icon }) => (
+          <Card key={label} className="glass min-w-0 gap-0 p-3 sm:p-4">
+            <div className="flex min-h-9 items-center justify-between gap-2">
+              <p className="text-xs leading-snug font-medium text-muted-foreground [overflow-wrap:anywhere]">{label}</p>
               <div className="kpi-icon">
                 <Icon className="size-3.5" strokeWidth={1.7} />
               </div>
             </div>
-            <strong className="mt-3 text-[29px] leading-none font-medium tracking-[-0.055em]">
+            <strong className="mt-3 text-3xl leading-none font-semibold tracking-tight tabular-nums">
               {value}
             </strong>
-            <p className="mt-2 text-[10px] text-[#65584c]">{caption}</p>
-            <div className="kpi-footnote">
-              <span className="metric-chip">
-                <span className="size-1 rounded-full bg-[#537c67]" />
-              </span>
-              {trend}
-            </div>
+            <p className="mt-2 text-xs leading-snug text-muted-foreground">{caption}</p>
           </Card>
         ))}
       </section>
-      <div className="grid gap-4 xl:grid-cols-[1.7fr_1fr]">
-        <Card className="glass overview-chart min-w-0 gap-0">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <Card className="glass min-w-0 gap-0 p-4 sm:p-5">
           <PanelHeading
-            title="Presença que faz a diferença"
-            description="Evolução diária dos registros de frequência"
+            title="Evolução da frequência"
+            description="Presenças (incluindo atrasos) e faltas por dia"
             action={
               <span className="status-pill">
                 {totals.attendance
@@ -144,16 +126,16 @@ export default function Overview() {
           />
           <div className="mb-1 flex gap-5 text-[11px] text-muted-foreground">
             <span className="flex items-center gap-2">
-              <i className="size-1.5 rounded-full bg-[#e77656]" />
+              <i className="size-2 rounded-sm bg-[var(--chart-positive)]" />
               Presenças
             </span>
             <span className="flex items-center gap-2">
-              <i className="size-1.5 rounded-full bg-[#625a50]" />
+              <i className="size-2 rounded-sm bg-[var(--chart-negative)]" />
               Faltas
             </span>
           </div>
           {totals.attendance ? (
-            <Suspense fallback={<Loading />}>
+            <Suspense fallback={<div role="status"><span className="sr-only">Carregando gráfico de frequência…</span><ChartSkeleton /></div>}>
               <AttendanceChart data={timeline} />
             </Suspense>
           ) : (
@@ -163,12 +145,12 @@ export default function Overview() {
             />
           )}
         </Card>
-        <Card className="glass overview-chart gap-0">
+        <Card className="glass min-w-0 gap-0 p-4 sm:p-5">
           <PanelHeading
-            title="Um olhar sobre os RAs"
-            description="Distribuição dos registros acadêmicos"
+            title="Registros acadêmicos"
+            description="Distribuição entre positivos e negativos"
           />
-          <Suspense fallback={<Loading />}>
+          <Suspense fallback={<div role="status"><span className="sr-only">Carregando gráfico de registros…</span><ChartSkeleton donut /></div>}>
             <OccurrenceChart
               positive={totals.positive}
               negative={totals.negative}
@@ -179,14 +161,14 @@ export default function Overview() {
       <Card className="glass gap-0 overflow-hidden p-0">
         <div className="px-6 pt-6">
           <PanelHeading
-            title="Suas turmas, mais perto"
+            title="Resumo por turma"
             description="Indicadores consolidados do período selecionado"
             action={
               <Button asChild variant="ghost" className="text-xs text-primary">
                 <Link
                   to={{ pathname: "/relatorios", search: params.toString() }}
                 >
-                  Explorar relatórios
+                   Ver relatórios
                   <ArrowRight className="size-3.5" />
                 </Link>
               </Button>
@@ -244,9 +226,9 @@ export default function Overview() {
                       <span className="text-xs font-medium">
                         {rate === null ? "Sem registros" : `${rate}%`}
                       </span>
-                      <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-white/40">
+                       <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
                         <div
-                          className="h-full rounded-full bg-[#449e87]/80"
+                           className="h-full rounded-full bg-primary"
                           style={{ width: `${rate ?? 0}%` }}
                         />
                       </div>
@@ -259,7 +241,7 @@ export default function Overview() {
                     </span>
                   </TableCell>
                   <TableCell>
-                    <span className="inline-flex items-center gap-1.5 text-xs text-[#b75f47]">
+                     <span className="inline-flex items-center gap-1.5 text-xs text-destructive">
                       <ArrowDownRight className="size-3.5" />
                       {number(report.totals.occurrences.negative)}
                     </span>
@@ -273,7 +255,7 @@ export default function Overview() {
                       className={
                         pending
                           ? "bg-amber-50 text-amber-800"
-                          : "bg-white/45 text-[#65584c]"
+                           : ""
                       }
                     >
                       {pending
@@ -287,27 +269,6 @@ export default function Overview() {
           </TableBody>
         </Table>
       </Card>
-      <div className="glass overview-note">
-        <div className="flex items-center gap-3">
-          <span className="soft-icon">
-            <HeartHandshake className="size-5" />
-          </span>
-          <div>
-            <h3 className="text-xs font-semibold">
-              Por trás de cada dado, uma trajetória.
-            </h3>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Use os indicadores para aproximar, acolher e acompanhar.
-            </p>
-          </div>
-        </div>
-        <Button asChild variant="ghost" className="text-xs text-primary">
-          <Link to={{ pathname: "/estudantes", search: params.toString() }}>
-            Conhecer as trajetórias
-            <ArrowRight className="size-3.5" />
-          </Link>
-        </Button>
-      </div>
     </div>
   );
 }

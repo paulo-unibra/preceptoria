@@ -1,6 +1,6 @@
 import {
-  Area,
-  AreaChart,
+  Bar,
+  BarChart,
   CartesianGrid,
   Cell,
   Pie,
@@ -14,10 +14,10 @@ import { EmptyState } from "@/components/feedback";
 import { number } from "@/lib/utils";
 
 const tooltipStyle = {
-  border: "1px solid rgba(255,255,255,.6)",
-  borderRadius: 16,
-  background: "rgba(248,242,234,.96)",
-  boxShadow: "0 12px 35px #523c2912",
+  border: "1px solid #e2e7e3",
+  borderRadius: 10,
+  background: "#fff",
+  boxShadow: "0 6px 20px #18211d14",
   fontSize: 12,
 };
 export function AttendanceChart({
@@ -32,69 +32,50 @@ export function AttendanceChart({
       aria-label={`Frequência no período: ${data.reduce((sum, item) => sum + item.presentes, 0)} presenças e ${data.reduce((sum, item) => sum + item.faltas, 0)} faltas. Os totais por turma estão na tabela abaixo.`}
     >
       <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-        <AreaChart
+        <BarChart
           data={data}
           margin={{ top: 16, right: 5, left: -25, bottom: 0 }}
           accessibilityLayer
         >
-          <defs>
-            <linearGradient
-              id="attendance-gradient"
-              x1="0"
-              y1="0"
-              x2="0"
-              y2="1"
-            >
-              <stop offset="0%" stopColor="#e77656" stopOpacity={0.28} />
-              <stop offset="95%" stopColor="#e77656" stopOpacity={0.02} />
-            </linearGradient>
-            <linearGradient id="absence-gradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#625a50" stopOpacity={0.1} />
-              <stop offset="95%" stopColor="#625a50" stopOpacity={0} />
-            </linearGradient>
-          </defs>
           <CartesianGrid
-            stroke="#8b756219"
-            strokeDasharray="2 6"
+            stroke="#e2e7e3"
             vertical={false}
           />
           <XAxis
             dataKey="label"
             axisLine={false}
             tickLine={false}
-            tick={{ fontSize: 9, fill: "#7a6b5c" }}
+            tick={{ fontSize: 10, fill: "#5b665f" }}
             minTickGap={28}
             dy={10}
           />
           <YAxis
             axisLine={false}
             tickLine={false}
-            tick={{ fontSize: 9, fill: "#7a6b5c" }}
+            tick={{ fontSize: 10, fill: "#5b665f" }}
             allowDecimals={false}
           />
           <Tooltip
             contentStyle={tooltipStyle}
-            cursor={{ stroke: "#baa591", strokeDasharray: "4 4" }}
+            cursor={{ fill: "#edf3ee" }}
           />
-          <Area
+          <Bar
             name="Presenças"
-            type="monotone"
             dataKey="presentes"
-            stroke="#e77656"
-            strokeWidth={2}
-            fill="url(#attendance-gradient)"
+            fill="var(--chart-positive)"
+            maxBarSize={24}
+            radius={[3, 3, 0, 0]}
             isAnimationActive={false}
           />
-          <Area
+          <Bar
             name="Faltas"
-            type="monotone"
             dataKey="faltas"
-            stroke="#625a50"
-            strokeWidth={1.5}
-            fill="url(#absence-gradient)"
+            fill="var(--chart-negative)"
+            maxBarSize={24}
+            radius={[3, 3, 0, 0]}
             isAnimationActive={false}
           />
-        </AreaChart>
+        </BarChart>
       </ResponsiveContainer>
     </div>
   );
@@ -140,7 +121,7 @@ export function OccurrenceChart({
               endAngle={-270}
               isAnimationActive={false}
             >
-              {["#449e87", "#e77656"].map((color) => (
+              {["var(--chart-positive)", "var(--chart-negative)"].map((color) => (
                 <Cell key={color} fill={color} />
               ))}
             </Pie>
@@ -156,12 +137,12 @@ export function OccurrenceChart({
           </span>
         </div>
       </div>
-      <div className="grid grid-cols-2 divide-x divide-white/35 text-center">
+      <div className="grid grid-cols-2 divide-x divide-border text-center">
         {data.map((item, i) => (
           <div key={item.name}>
             <p className="mb-1 flex items-center justify-center gap-2 text-xs text-muted-foreground">
               <span
-                className={`size-1.5 rounded-full ${i === 0 ? "bg-[#449e87]" : "bg-[#e77656]"}`}
+                  className={`size-2 rounded-sm ${i === 0 ? "bg-[var(--chart-positive)]" : "bg-[var(--chart-negative)]"}`}
               />
               {item.name}
             </p>

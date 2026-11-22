@@ -1,13 +1,12 @@
 import {
   Component,
   lazy,
-  Suspense,
   type ErrorInfo,
   type ReactNode,
 } from "react";
 import { Navigate, Outlet, Route, Routes } from "react-router";
 import { useAuth } from "@/lib/auth";
-import { ErrorState, Loading } from "@/components/feedback";
+import { ErrorState, PageSkeleton } from "@/components/feedback";
 import Layout from "@/components/layout";
 import Login from "@/pages/login";
 
@@ -20,7 +19,12 @@ const Imports = lazy(() => import("@/pages/imports"));
 
 function ProtectedRoute() {
   const { user, loading, error, retry, signOut } = useAuth();
-  if (loading) return <Loading label="Restaurando sua sessão…" />;
+  if (loading)
+    return (
+      <main className="mx-auto max-w-7xl p-4 sm:p-8">
+        <PageSkeleton label="Restaurando sua sessão…" />
+      </main>
+    );
   if (error)
     return (
       <main className="mx-auto max-w-xl space-y-4 p-8">
@@ -69,20 +73,18 @@ export class ErrorBoundary extends Component<
 
 export default function App() {
   return (
-    <Suspense fallback={<Loading />}>
-      <Routes>
-        <Route element={<ProtectedRoute />}>
-          <Route element={<Layout />}>
-            <Route index element={<Overview />} />
-            <Route path="estudantes" element={<Students />} />
-            <Route path="ocorrencias" element={<Occurrences />} />
-            <Route path="ranking" element={<Ranking />} />
-            <Route path="relatorios" element={<Reports />} />
-            <Route path="importacoes" element={<Imports />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
+    <Routes>
+      <Route element={<ProtectedRoute />}>
+        <Route element={<Layout />}>
+          <Route index element={<Overview />} />
+          <Route path="estudantes" element={<Students />} />
+          <Route path="ocorrencias" element={<Occurrences />} />
+          <Route path="ranking" element={<Ranking />} />
+          <Route path="relatorios" element={<Reports />} />
+          <Route path="importacoes" element={<Imports />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
-      </Routes>
-    </Suspense>
+      </Route>
+    </Routes>
   );
 }

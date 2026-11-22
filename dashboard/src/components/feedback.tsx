@@ -1,31 +1,66 @@
-import { AlertCircle, Inbox, LoaderCircle, RefreshCw } from "lucide-react";
+import { AlertCircle, Inbox, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
-export function Loading({ label = "Carregando dados…" }: { label?: string }) {
+export function Loading({
+  label = "Carregando dados…",
+  className,
+}: { label?: string; className?: string }) {
   return (
-    <div
-      role="status"
-      className="flex min-h-48 items-center justify-center gap-3 text-sm text-muted-foreground"
-    >
-      <LoaderCircle className="size-5 animate-spin" />
-      {label}
+    <div role="status" className={cn("space-y-3 p-4", className)}>
+      <span className="sr-only">{label}</span>
+      <Skeleton aria-hidden="true" className="h-4 w-2/5" />
+      {[0, 1, 2].map((row) => (
+        <Skeleton key={row} aria-hidden="true" className="h-10 w-full" />
+      ))}
     </div>
   );
 }
-export function PageSkeleton() {
+
+export function ChartSkeleton({ donut = false }: { donut?: boolean }) {
   return (
-    <div
-      role="status"
-      aria-label="Carregando indicadores"
-      className="space-y-6"
-    >
-      <div className="grid grid-cols-2 gap-5 xl:grid-cols-4">
-        {[1, 2, 3, 4].map((i) => (
-          <Skeleton key={i} className="h-40 rounded-3xl bg-white/70" />
-        ))}
+    <div aria-hidden="true" className="flex h-52 items-end justify-center gap-3 px-3 pb-5 sm:h-56 sm:gap-5">
+      {donut ? (
+        <Skeleton className="m-auto size-36 rounded-full border-[18px] border-muted bg-transparent" />
+      ) : [44, 63, 53, 79, 60, 72, 50].map((height, index) => (
+        <Skeleton key={index} className="w-full max-w-14" style={{ height: `${height}%` }} />
+      ))}
+    </div>
+  );
+}
+
+export function PageSkeleton({ label = "Carregando indicadores…" }: { label?: string }) {
+  return (
+    <div role="status" className="space-y-4">
+      <span className="sr-only">{label}</span>
+      <div aria-hidden="true" className="space-y-4">
+        <div className="grid gap-3 min-[360px]:grid-cols-2 xl:grid-cols-4">
+          {[0, 1, 2, 3].map((item) => (
+            <div key={item} className="glass space-y-3 p-4">
+              <div className="flex items-center justify-between gap-2">
+                <Skeleton className="h-3 w-2/3" />
+                <Skeleton className="size-8" />
+              </div>
+              <Skeleton className="h-8 w-16" />
+              <Skeleton className="h-3 w-3/4" />
+            </div>
+          ))}
+        </div>
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+          {[false, true].map((donut) => (
+            <div key={String(donut)} className="glass min-w-0 space-y-2 p-4 sm:p-5">
+              <Skeleton className="h-4 w-2/5" />
+              <Skeleton className="h-3 w-3/5" />
+              <ChartSkeleton donut={donut} />
+            </div>
+          ))}
+        </div>
+        <div className="glass space-y-3 p-5">
+          <Skeleton className="h-4 w-36" />
+          {[0, 1, 2].map((row) => <Skeleton key={row} className="h-10 w-full" />)}
+        </div>
       </div>
-      <Skeleton className="h-80 rounded-3xl bg-white/70" />
     </div>
   );
 }
@@ -62,8 +97,8 @@ export function EmptyState({
 }) {
   return (
     <div className="flex min-h-48 flex-col items-center justify-center gap-3 p-6 text-center">
-      <div className="rounded-2xl bg-white/40 p-3">
-        <Inbox className="size-6 text-[#9c8068]" />
+      <div className="rounded-xl bg-accent p-3">
+        <Inbox className="size-6 text-primary" />
       </div>
       <h3 className="font-medium">{title}</h3>
       <p className="max-w-md text-sm text-muted-foreground">{description}</p>
