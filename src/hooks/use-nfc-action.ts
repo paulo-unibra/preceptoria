@@ -18,10 +18,23 @@ export function useNfcAction() {
 
   useFocusEffect(useCallback(() => () => cancel(), [cancel]));
   useEffect(() => {
+    // No Android, a entrega do cartão pausa e retoma a Activity (onPause → onNewIntent → onResume),
+    // o que o React Native reporta como "background". Cancelar nesse instante interrompia a gravação.
+    // Só cancela se o app continuar fora de primeiro plano depois de uma pausa real.
+    let timer: ReturnType<typeof setTimeout> | undefined;
     const subscription = AppState.addEventListener('change', (state) => {
-      if (state === 'background') cancel();
+      if (timer) clearTimeout(timer);
+      timer = undefined;
+      if (state === 'background') {
+        timer = setTimeout(() => {
+          if (AppState.currentState !== 'active') cancel();
+        }, 3000);
+      }
     });
-    return () => subscription.remove();
+    return () => {
+      if (timer) clearTimeout(timer);
+      subscription.remove();
+    };
   }, [cancel]);
 
   async function run(
