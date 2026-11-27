@@ -2,9 +2,18 @@ import type { HttpContext } from '@adonisjs/core/http'
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js'
 import { loadMcpAuth, MCP_READ } from '#services/mcp_auth'
 import { createPreceptoriaMcp } from '#services/preceptoria_mcp'
+import env from '#start/env'
 
-let auth: NonNullable<ReturnType<typeof loadMcpAuth>> | null
-const mcpAuth = () => (auth ??= loadMcpAuth())
+let auth: ReturnType<typeof loadMcpAuth>
+let key: string | undefined
+function mcpAuth() {
+  const next = JSON.stringify([env.get('MCP_PUBLIC_URL'), env.get('MCP_FIRST_PARTY_USERS')])
+  if (key !== next) {
+    auth = loadMcpAuth()
+    key = next
+  }
+  return auth
+}
 
 export default class McpController {
   metadata({ response }: HttpContext) {

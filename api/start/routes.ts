@@ -7,7 +7,7 @@
 import router from '@adonisjs/core/services/router'
 import db from '@adonisjs/lucid/services/db'
 import { middleware } from '#start/kernel'
-import { loginThrottle } from '#start/limiter'
+import { loginThrottle, oauthConsentThrottle, oauthTokenThrottle } from '#start/limiter'
 
 const AuthController = () => import('#controllers/auth_controller')
 const UsersController = () => import('#controllers/users_controller')
@@ -29,6 +29,7 @@ const AuditLogsController = () => import('#controllers/audit_logs_controller')
 const StudentImportsController = () => import('#controllers/student_imports_controller')
 const StudentNfcCardsController = () => import('#controllers/student_nfc_cards_controller')
 const McpController = () => import('#controllers/mcp_controller')
+const McpOauthController = () => import('#controllers/mcp_oauth_controller')
 
 const adminOnly = middleware.role({ roles: ['admin'] })
 const staff = middleware.role({ roles: ['admin', 'coordenacao'] })
@@ -38,6 +39,13 @@ router.get('/privacidade', [PagesController, 'privacy'])
 router.get('/exclusao-de-conta', [PagesController, 'accountDeletion'])
 router.get('/.well-known/oauth-protected-resource/mcp', [McpController, 'metadata'])
 router.route('/mcp', ['POST', 'GET', 'DELETE'], [McpController, 'handle'])
+router.get('/.well-known/oauth-authorization-server', [McpOauthController, 'metadata'])
+router.get('/admin/acesso-personalizado', [McpOauthController, 'authorize'])
+router
+  .post('/admin/acesso-personalizado', [McpOauthController, 'consent'])
+  .use([oauthConsentThrottle, loginThrottle])
+router.post('/oauth/token', [McpOauthController, 'token']).use(oauthTokenThrottle)
+router.post('/oauth/revoke', [McpOauthController, 'revoke']).use(oauthTokenThrottle)
 router.get('/health', async () => {
   await db.rawQuery('select 1')
   return { status: 'ok' }
@@ -53,6 +61,7 @@ router
         router.post('auth/logout', [AuthController, 'logout'])
         router.get('auth/me', [AuthController, 'me'])
         router.put('auth/password', [AuthController, 'changePassword'])
+        router.delete('auth/mcp', [McpOauthController, 'disconnect'])
 
         // Administração
         router.get('imports/students', [StudentImportsController, 'index']).use(adminOnly)

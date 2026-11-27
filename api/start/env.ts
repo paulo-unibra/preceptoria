@@ -53,6 +53,7 @@ export default await Env.create(new URL('../', import.meta.url), {
   */
   LIMITER_STORE: Env.schema.enum(['database', 'memory'] as const),
   MCP_PUBLIC_URL: Env.schema.string.optional(),
+  MCP_FIRST_PARTY_USERS: Env.schema.string.optional(),
   MCP_OAUTH_ISSUER: Env.schema.string.optional(),
   MCP_OAUTH_JWKS_URL: Env.schema.string.optional(),
   MCP_USER_LINKS: Env.schema.string.optional(),

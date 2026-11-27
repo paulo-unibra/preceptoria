@@ -56,6 +56,7 @@ const html = `<!doctype html>
 
 <h2>5. Compartilhamento</h2>
 <p>Os dados não são vendidos nem compartilhados com terceiros para fins comerciais. Ficam hospedados em servidor próprio contratado para este serviço, que atua apenas como infraestrutura de hospedagem. O aplicativo não utiliza serviços de anúncios, análise de uso ou monitoramento de terceiros.</p>
+<p>A conexão opcional com o ChatGPT exige autorização expressa do profissional. Quando é usada, o ChatGPT recebe os registros solicitados pelas ferramentas, dentro das permissões da conta. A senha é digitada na página da Preceptoria e não é enviada ao ChatGPT. Use a integração somente em ambiente autorizado pela instituição.</p>
 
 <h2>6. Segurança</h2>
 <ul>

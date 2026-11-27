@@ -1,9 +1,32 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose'
 import env from '#start/env'
 import User from '#models/user'
+import { makePreceptoriaOAuth, MCP_READ, MCP_WRITE } from '#services/preceptoria_oauth'
+export { MCP_READ, MCP_WRITE }
 
-export const MCP_READ = 'preceptoria:read'
-export const MCP_WRITE = 'preceptoria:write'
+export function getMcpResource(resource: string) {
+  const url = secureUrl(resource)
+  if (url.href !== resource || url.pathname !== '/mcp') {
+    throw new Error('MCP_PUBLIC_URL deve ser a URL canônica do endpoint /mcp.')
+  }
+  return url
+}
+
+export function mcpResourceMetadata(url: URL, issuer: string) {
+  const metadataUrl = new URL('/.well-known/oauth-protected-resource/mcp', url).href
+  return {
+    url,
+    metadata: {
+      resource: url.href,
+      authorization_servers: [issuer],
+      scopes_supported: [MCP_READ, MCP_WRITE],
+      bearer_methods_supported: ['header'],
+    },
+    challenge(scope: string, error?: 'invalid_token' | 'insufficient_scope') {
+      return `Bearer resource_metadata="${metadataUrl}", scope="${scope}"${error ? `, error="${error}"` : ''}`
+    },
+  }
+}
 
 function secureUrl(value: string) {
   const url = new URL(value)
@@ -25,10 +48,7 @@ export function makeMcpAuth(config: {
   jwks: string
   links: string
 }) {
-  const url = secureUrl(config.resource)
-  if (url.href !== config.resource || url.pathname !== '/mcp') {
-    throw new Error('MCP_PUBLIC_URL deve ser a URL canônica do endpoint /mcp.')
-  }
+  const url = getMcpResource(config.resource)
   secureUrl(config.issuer)
   const keys = createRemoteJWKSet(secureUrl(config.jwks))
   const input: unknown = JSON.parse(config.links)
@@ -42,18 +62,8 @@ export function makeMcpAuth(config: {
     }
     links.set(subject, id)
   }
-  const metadataUrl = new URL('/.well-known/oauth-protected-resource/mcp', url).href
   return {
-    url,
-    metadata: {
-      resource: url.href,
-      authorization_servers: [config.issuer],
-      scopes_supported: [MCP_READ, MCP_WRITE],
-      bearer_methods_supported: ['header'],
-    },
-    challenge(scope: string, error?: 'invalid_token' | 'insufficient_scope') {
-      return `Bearer resource_metadata="${metadataUrl}", scope="${scope}"${error ? `, error="${error}"` : ''}`
-    },
+    ...mcpResourceMetadata(url, config.issuer),
     async authenticate(header?: string) {
       const token = header?.match(/^Bearer ([^\s,]+)$/i)?.[1]
       if (!token || token.length > 16384) return null
@@ -82,9 +92,22 @@ export function makeMcpAuth(config: {
 export function loadMcpAuth() {
   const resource = env.get('MCP_PUBLIC_URL')
   if (!resource) return null
+  const firstParty = env.get('MCP_FIRST_PARTY_USERS')
+  if (firstParty) return mcpResourceMetadataWithFirstParty(resource, firstParty)
   const issuer = env.get('MCP_OAUTH_ISSUER')
   const jwks = env.get('MCP_OAUTH_JWKS_URL')
   const links = env.get('MCP_USER_LINKS')
   if (!issuer || !jwks || !links) throw new Error('Configuração OAuth do MCP incompleta.')
   return makeMcpAuth({ resource, issuer, jwks, links })
+}
+
+function mcpResourceMetadataWithFirstParty(resource: string, users: string) {
+  const oauth = makePreceptoriaOAuth(getMcpResource(resource), users)
+  return { ...mcpResourceMetadata(oauth.url, oauth.issuer), authenticate: oauth.authenticate }
+}
+
+export function loadPreceptoriaOAuth() {
+  const resource = env.get('MCP_PUBLIC_URL')
+  const users = env.get('MCP_FIRST_PARTY_USERS')
+  return resource && users ? makePreceptoriaOAuth(getMcpResource(resource), users) : null
 }
