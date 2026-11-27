@@ -32,6 +32,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ErrorState, Loading, PageSkeleton } from "@/components/feedback";
+import { DateFilterInput } from "@/components/date-filter-input";
 
 const navigation = [
   { path: "/", label: "Visão geral", icon: LayoutDashboard, description: "Indicadores de frequência, registros acadêmicos e acompanhamento das turmas." },
@@ -231,14 +232,8 @@ export default function Layout() {
                   </select>
                 )}
               </label>
-              <label className="filter-field">
-                <span>{isActivity ? "Gravado a partir de (UTC)" : "Data inicial"}</span>
-                <input type="date" className="filter-control" value={from} max={to} onChange={(event) => updateFilter("from", event.target.value)} />
-              </label>
-              <label className="filter-field">
-                <span>{isActivity ? "Gravado até (UTC)" : "Data final"}</span>
-                <input type="date" className="filter-control" value={to} min={from} max={today} onChange={(event) => updateFilter("to", event.target.value)} />
-              </label>
+              <DateFilterInput label={isActivity ? "Gravado a partir de (UTC)" : "Data inicial"} value={from} max={today} onCommit={(value) => updateFilter("from", value)} />
+              <DateFilterInput label={isActivity ? "Gravado até (UTC)" : "Data final"} value={to} max={today} onCommit={(value) => updateFilter("to", value)} />
             </section>
           )}
 
