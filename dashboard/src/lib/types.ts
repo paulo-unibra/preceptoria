@@ -10,3 +10,12 @@ export type {
   Totals,
   Paginated as Page,
 } from "../../../src/lib/types";
+
+import type { AuditLog } from "../../../src/lib/types";
+
+export interface AuditEntry extends AuditLog {
+  entity: string;
+  entity_id: number;
+  classroom_id: number | null;
+  user_id: number | null;
+}

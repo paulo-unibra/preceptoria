@@ -15,6 +15,7 @@ const Students = lazy(() => import("@/pages/students"));
 const Occurrences = lazy(() => import("@/pages/occurrences"));
 const Ranking = lazy(() => import("@/pages/ranking"));
 const Reports = lazy(() => import("@/pages/reports"));
+const Activity = lazy(() => import("@/pages/activity"));
 const Imports = lazy(() => import("@/pages/imports"));
 
 function ProtectedRoute() {
@@ -81,6 +82,7 @@ export default function App() {
           <Route path="ocorrencias" element={<Occurrences />} />
           <Route path="ranking" element={<Ranking />} />
           <Route path="relatorios" element={<Reports />} />
+          <Route path="atividade" element={<Activity />} />
           <Route path="importacoes" element={<Imports />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

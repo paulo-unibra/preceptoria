@@ -2,6 +2,7 @@ import { Suspense, useState } from "react";
 import { NavLink, Outlet, useLocation, useSearchParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  Activity,
   ChevronRight,
   ClipboardList,
   FileChartColumn,
@@ -38,6 +39,7 @@ const navigation = [
   { path: "/ocorrencias", label: "Ocorrências", icon: ClipboardList, description: "Acompanhe os registros acadêmicos do período." },
   { path: "/ranking", label: "Destaques", icon: Trophy, description: "Veja os destaques das turmas no período." },
   { path: "/relatorios", label: "Relatórios", icon: FileChartColumn, description: "Consulte e exporte os indicadores consolidados das turmas." },
+  { path: "/atividade", label: "Atividade", icon: Activity, description: "Confira quem gravou ou alterou os registros e o que mudou." },
   { path: "/importacoes", label: "Importações", icon: Upload, description: "Importe fichas de estudantes e consulte o histórico de arquivos." },
 ];
 const roles = {
@@ -63,7 +65,9 @@ function SidebarBrand({ compact = false }: { compact?: boolean }) {
 export default function Layout() {
   const { user, signOut } = useAuth();
   const visibleNavigation = navigation.filter(
-    (item) => item.path !== "/importacoes" || user?.role === "admin",
+    (item) =>
+      (item.path !== "/importacoes" || user?.role === "admin") &&
+      (item.path !== "/atividade" || user?.role === "admin" || user?.role === "coordenacao"),
   );
   const client = useQueryClient();
   const [params, setParams] = useSearchParams();
@@ -74,18 +78,19 @@ export default function Layout() {
   const [loggingOut, setLoggingOut] = useState(false);
   const pathname = location.pathname.replace(/\/$/, "") || "/";
   const current = navigation.find((item) => item.path === pathname) ?? navigation[0];
-  const hasFilters = current.path !== "/importacoes";
+  const isActivity = current.path === "/atividade";
+  const hasFilters = current.path !== "/importacoes" && (!isActivity || visibleNavigation.includes(current));
   const classrooms = useQuery({
-    queryKey: ["classrooms"],
+    queryKey: isActivity ? ["classrooms", "all"] : ["classrooms"],
     queryFn: ({ signal }) =>
       api<{ data: Classroom[] }>("/classrooms", {
-        query: { is_active: true },
+        query: { is_active: isActivity ? undefined : true },
         signal,
       }),
     enabled: hasFilters,
     staleTime: 5 * 60_000,
   });
-  const today = dateISO();
+  const today = isActivity ? new Date().toISOString().slice(0, 10) : dateISO();
   const weekAgo = new Date(`${today}T12:00:00`);
   weekAgo.setDate(weekAgo.getDate() - 6);
   const validDate = (value: string | null, fallback: string) =>
@@ -227,11 +232,11 @@ export default function Layout() {
                 )}
               </label>
               <label className="filter-field">
-                <span>Data inicial</span>
+                <span>{isActivity ? "Gravado a partir de (UTC)" : "Data inicial"}</span>
                 <input type="date" className="filter-control" value={from} max={to} onChange={(event) => updateFilter("from", event.target.value)} />
               </label>
               <label className="filter-field">
-                <span>Data final</span>
+                <span>{isActivity ? "Gravado até (UTC)" : "Data final"}</span>
                 <input type="date" className="filter-control" value={to} min={from} max={today} onChange={(event) => updateFilter("to", event.target.value)} />
               </label>
             </section>
