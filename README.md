@@ -74,6 +74,12 @@ Fluxo diário do PDF: **entrar → turma e data → frequência e fardamento →
 Cadastro de usuários, turmas, estudantes e a tabela de códigos RA é feito pela API (administração).
 Ainda **não** há telas no app para: encaminhamentos (RF-11), exportar PDF, gráficos e administração.
 
+## Preceptoria no ChatGPT
+
+O MCP usa a mesma base do app e do dashboard. Permite consultar e corrigir frequência e fardamento,
+registrar RAs e observações, e consultar a ficha de acompanhamento por período. Veja o
+[guia de ativação e uso com relatórios](api/README.md#preceptoria-no-chatgpt-mcp).
+
 ## Cartão NFC e presença por aproximação
 
 - Na **ficha do estudante**, preceptores vinculados à turma e administradores podem **Cadastrar cartão NFC**, gravar um substituto ou desvincular o cartão. Coordenação continua somente com consulta aos registros.

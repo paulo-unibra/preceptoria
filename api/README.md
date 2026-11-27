@@ -73,6 +73,35 @@ Autenticação por `Authorization: Bearer <token>` (exceto o login).
 
 Erros seguem sempre `{ "errors": [{ "message": "...", "code": "E_...", "field": "..." }] }`.
 
+## Preceptoria no ChatGPT (MCP)
+
+O servidor usa MCP Streamable HTTP em `/mcp` na mesma API. Os lançamentos são feitos na base existente, com o perfil do profissional, escopo por turma e auditoria por usuário. Não há banco separado, migração nova nem token compartilhado. A integração fica desabilitada sem `MCP_PUBLIC_URL`.
+
+### Ativação
+
+1. No provedor institucional de identidade, configure um cliente OAuth com **Authorization Code + PKCE S256** e um recurso com a URL HTTPS exata do endpoint, por exemplo `https://preceptoria.exemplo.org/mcp`. Use um modo de registro compatível com o [ChatGPT](https://developers.openai.com/apps-sdk/build/auth/). Autorize os escopos `preceptoria:read` e, para profissionais que podem gravar, `preceptoria:write`. O provedor deve publicar o discovery OAuth e emitir **access tokens JWT** RS256 ou ES256 para o recurso, com `iss`, `aud` (URL do MCP), `sub`, `exp` e `scope` (string com escopos separados por espaço). Não envie ID tokens. Use tokens de vida curta.
+2. Preencha `MCP_PUBLIC_URL`, `MCP_OAUTH_ISSUER`, `MCP_OAUTH_JWKS_URL` e `MCP_USER_LINKS` conforme [`api/.env.example`](.env.example). Confirme cada `sub` no provedor antes de associá-lo ao ID da conta existente na Preceptoria. Vincule contas individuais de menor privilégio; desativar a conta na Preceptoria bloqueia novas chamadas. Reinicie a API depois de alterar a configuração.
+3. Publique a API atrás de HTTPS. O proxy deve encaminhar `/mcp` e `/.well-known/oauth-protected-resource/mcp` e preservar `Authorization`, `Accept` e `MCP-Protocol-Version`. No workspace autorizado do ChatGPT, habilite o modo de desenvolvedor e crie um app privado com a URL `/mcp` e autenticação OAuth. Cadastre no provedor a **URL de redirecionamento exata exibida pelo ChatGPT**. Valide descoberta, conexão e ferramentas com uma conta e turma de teste antes de usar registros reais. A disponibilidade de escrita depende do suporte a apps MCP no plano e das configurações do workspace.
+
+### Ferramentas
+
+| Ferramentas | Uso |
+|---|---|
+| `listar_turmas`, `buscar_estudantes` | Identificar a turma e o estudante no cadastro existente |
+| `consultar_registros_do_dia`, `consultar_historico`, `listar_codigos_ra` | Consultar frequência/checklist, histórico paginado por período e catálogo de RAs |
+| `salvar_frequencia`, `salvar_fardamento` | Cadastrar ou corrigir os registros informados, em lote por turma/data |
+| `cadastrar_ra`, `editar_ra`, `cadastrar_observacao`, `editar_observacao` | Gravar e corrigir registros individuais; criação de RA usa o catálogo oficial |
+
+### Como usar os relatórios existentes
+
+Pode-se anexar um relatório em uma conversa no workspace institucional autorizado e pedir uma prévia dos lançamentos por turma, estudante e data. O ChatGPT interpreta o anexo; o MCP recebe somente os campos selecionados para consulta ou gravação. **Não há importador automático do PDF de preceptoria**, nem ferramenta MCP para criar cadastros de estudantes ou guardar o PDF integral. O importador SGGE/Sicap abaixo é para outro formato.
+
+> Exemplo: “Compare as presenças e faltas datadas deste relatório com o que já está cadastrado para a turma. Liste os lançamentos novos, as divergências e as linhas que precisam de conferência. Aguarde minha confirmação para salvar.”
+
+- “Não discriminado” e “sem chamada” ficam sem lançamento. Saída antecipada e atividade externa não viram falta; quando pertinente, registre em observação. Só lance frequência com o horário de início da chamada verificado. Totais históricos sem datas individuais ficam como referência no relatório; não distribua o total em datas inventadas.
+- Confira identidade, ano letivo, horários e divergências na fonte. Não transforme suspeitas ou códigos sugeridos em RAs formais. Registre como observação somente o fato verificado e necessário, sem detalhes pessoais ou de saúde dispensáveis.
+- Ao revisar PDFs que cobrem os mesmos dias, consulte o histórico e não repita RAs/observações. A API sinaliza possíveis RAs duplicados. Frequência e checklist atualizam os registros dos alunos informados para o mesmo dia; ao corrigir, preserve o horário da turma e os campos que não precisam mudar.
+
 ## Cartões NFC
 
 Preceptores da turma e administradores podem cadastrar cartões na ficha do aluno e registrar presença pela chamada. Todas as rotas exigem autenticação e verificam as permissões e o aluno ativo; novos cadastros e presenças exigem turma ativa. Execute `node ace migration:run` após atualizar.

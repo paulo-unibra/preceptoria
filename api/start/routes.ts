@@ -28,6 +28,7 @@ const SettingsController = () => import('#controllers/settings_controller')
 const AuditLogsController = () => import('#controllers/audit_logs_controller')
 const StudentImportsController = () => import('#controllers/student_imports_controller')
 const StudentNfcCardsController = () => import('#controllers/student_nfc_cards_controller')
+const McpController = () => import('#controllers/mcp_controller')
 
 const adminOnly = middleware.role({ roles: ['admin'] })
 const staff = middleware.role({ roles: ['admin', 'coordenacao'] })
@@ -35,6 +36,8 @@ const staff = middleware.role({ roles: ['admin', 'coordenacao'] })
 router.get('/', async () => ({ name: 'Preceptoria - Acompanhamento Escolar API', version: 'v1' }))
 router.get('/privacidade', [PagesController, 'privacy'])
 router.get('/exclusao-de-conta', [PagesController, 'accountDeletion'])
+router.get('/.well-known/oauth-protected-resource/mcp', [McpController, 'metadata'])
+router.route('/mcp', ['POST', 'GET', 'DELETE'], [McpController, 'handle'])
 router.get('/health', async () => {
   await db.rawQuery('select 1')
   return { status: 'ok' }

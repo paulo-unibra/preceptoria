@@ -4,6 +4,7 @@ import ClassroomAccess from '#services/classroom_access'
 import { bulkUpsertDaily, rosterFor } from '#services/daily_records'
 import { bulkUniformValidator, rosterQueryValidator } from '#validators/daily'
 import { pageParams, toId } from '#support/query'
+import type User from '#models/user'
 
 export default class UniformChecksController {
   async roster({ auth, request }: HttpContext) {
@@ -19,20 +20,7 @@ export default class UniformChecksController {
 
   /** RF-02 — checklist diário de fardamento e calçado, em lote. */
   async bulk({ auth, request }: HttpContext) {
-    const { classroom_id, date, records } = await request.validateUsing(bulkUniformValidator)
-    const saved = await bulkUpsertDaily(
-      UniformCheck,
-      auth.user!,
-      classroom_id,
-      date,
-      records,
-      (r) => ({
-        uniformStatus: r.uniform_status,
-        footwearStatus: r.footwear_status,
-        note: r.note ?? null,
-      })
-    )
-    return { data: saved }
+    return saveUniformChecks(auth.user!, await request.validateUsing(bulkUniformValidator))
   }
 
   async index({ auth, request }: HttpContext) {
@@ -50,4 +38,16 @@ export default class UniformChecksController {
     if (request.input('to')) query.where('date', '<=', request.input('to'))
     return query.paginate(page, perPage)
   }
+}
+
+export async function saveUniformChecks(
+  user: User,
+  { classroom_id, date, records }: Awaited<ReturnType<typeof bulkUniformValidator.validate>>
+) {
+  const saved = await bulkUpsertDaily(UniformCheck, user, classroom_id, date, records, (r) => ({
+    uniformStatus: r.uniform_status,
+    footwearStatus: r.footwear_status,
+    note: r.note ?? null,
+  }))
+  return { data: saved }
 }

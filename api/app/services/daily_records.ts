@@ -70,6 +70,7 @@ export async function bulkUpsertDaily(
       const attributes = toAttributes(record)
       const row = byStudent.get(record.student_id)
       if (row) {
+        if (row.classroomId !== classroom.id) await ClassroomAccess.assert(user, row.classroomId)
         row.merge({ classroomId: classroom.id, ...attributes })
         await row.save()
       } else {

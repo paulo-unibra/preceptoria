@@ -11,6 +11,13 @@ import {
 } from '@adonisjs/lucid/orm'
 import type { AuditChanges } from '#models/audit_log'
 
+declare module '@adonisjs/core/http' {
+  interface HttpContext {
+    /** Definido somente após a verificação OAuth do MCP. */
+    mcpActorId?: number
+  }
+}
+
 /**
  * Import tardio: AuditLog -> User -> Classroom -> AuditedModel formaria um ciclo de módulos.
  */
@@ -32,8 +39,8 @@ function plain(value: unknown): unknown {
 }
 
 function currentUserId(): number | null {
-  const user = HttpContext.get()?.auth?.user as { id?: number } | undefined
-  return user?.id ?? null
+  const ctx = HttpContext.get()
+  return ctx?.auth?.user?.id ?? ctx?.mcpActorId ?? null
 }
 
 /**

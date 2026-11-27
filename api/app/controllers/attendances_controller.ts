@@ -6,6 +6,7 @@ import { bulkUpsertDaily, rosterFor } from '#services/daily_records'
 import { bulkAttendanceValidator, rosterQueryValidator } from '#validators/daily'
 import { parseDate } from '#support/dates'
 import { pageParams, toId } from '#support/query'
+import type User from '#models/user'
 
 export default class AttendancesController {
   /** Tela de chamada: estudantes da turma com a frequência do dia (ou null). */
@@ -34,38 +35,7 @@ export default class AttendancesController {
 
   /** RF-05 — registra/corrige presença, falta e atraso de várias pessoas de uma vez. */
   async bulk({ auth, request }: HttpContext) {
-    const { classroom_id, date, start_time, records } =
-      await request.validateUsing(bulkAttendanceValidator)
-    const saved = await bulkUpsertDaily(
-      Attendance,
-      auth.user!,
-      classroom_id,
-      date,
-      records,
-      (r) => ({
-        status: r.status,
-        // Horário de chegada só faz sentido para status "late"; justificativa só para falta.
-        arrivalTime: r.status === 'late' ? (r.arrival_time ?? null) : null,
-        isJustified: r.status === 'absent' ? (r.is_justified ?? false) : false,
-        note: r.note ?? null,
-      }),
-      async (trx, classroom) => {
-        const session = await AttendanceSession.query({ client: trx })
-          .where('classroom_id', classroom.id)
-          .where('date', date)
-          .first()
-        if (session) {
-          session.merge({ startTime: start_time })
-          await session.save()
-        } else {
-          await AttendanceSession.create(
-            { classroomId: classroom.id, date: parseDate(date), startTime: start_time },
-            { client: trx }
-          )
-        }
-      }
-    )
-    return { data: saved }
+    return saveAttendance(auth.user!, await request.validateUsing(bulkAttendanceValidator))
   }
 
   /** Consulta de histórico com filtros (RF-12). */
@@ -85,4 +55,45 @@ export default class AttendancesController {
     if (request.input('to')) query.where('date', '<=', request.input('to'))
     return query.paginate(page, perPage)
   }
+}
+
+export async function saveAttendance(
+  user: User,
+  {
+    classroom_id,
+    date,
+    start_time,
+    records,
+  }: Awaited<ReturnType<typeof bulkAttendanceValidator.validate>>
+) {
+  const saved = await bulkUpsertDaily(
+    Attendance,
+    user,
+    classroom_id,
+    date,
+    records,
+    (r) => ({
+      status: r.status,
+      // Horário de chegada só faz sentido para status "late"; justificativa só para falta.
+      arrivalTime: r.status === 'late' ? (r.arrival_time ?? null) : null,
+      isJustified: r.status === 'absent' ? (r.is_justified ?? false) : false,
+      note: r.note ?? null,
+    }),
+    async (trx, classroom) => {
+      const session = await AttendanceSession.query({ client: trx })
+        .where('classroom_id', classroom.id)
+        .where('date', date)
+        .first()
+      if (session) {
+        session.merge({ startTime: start_time })
+        await session.save()
+      } else {
+        await AttendanceSession.create(
+          { classroomId: classroom.id, date: parseDate(date), startTime: start_time },
+          { client: trx }
+        )
+      }
+    }
+  )
+  return { data: saved }
 }
