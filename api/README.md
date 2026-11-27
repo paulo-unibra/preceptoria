@@ -93,6 +93,16 @@ O servidor usa MCP Streamable HTTP em `/mcp` na mesma API. Os lançamentos são 
 | `consultar_registros_do_dia`, `consultar_historico`, `listar_codigos_ra` | Consultar frequência/checklist, histórico paginado por período e catálogo de RAs |
 | `salvar_frequencia`, `salvar_fardamento` | Cadastrar ou corrigir os registros informados, em lote por turma/data |
 | `cadastrar_ra`, `editar_ra`, `cadastrar_observacao`, `editar_observacao` | Gravar e corrigir registros individuais; criação de RA usa o catálogo oficial |
+| `consultar_diario_turma`, `salvar_aulas` | Consultar por período e cadastrar ou corrigir o diário de aulas por turma e data |
+| `cadastrar_acontecimento_turma`, `editar_acontecimento_turma` | Gravar e corrigir atividades, interrupções e ocorrências institucionais da turma |
+
+### Relatórios de aulas e ocorrências da turma
+
+O diário usa as mesmas aulas registradas na API. Cada período confirmado pode receber disciplina, professor, conteúdo, andamento e observações. Ao corrigir, campos omitidos são preservados. Para criar o diário, informe a quantidade de aulas prevista, se confirmada na fonte. Não complete horários, disciplinas ou conteúdo que o relatório não informa.
+
+Use acontecimentos da turma para registrar, por exemplo, recuperações sem horário identificado, parada pedagógica, ponto facultativo e gincana. Ocorrências institucionais são consultáveis pelo autor, pela coordenação da turma e por administradores. Relatos institucionais não entram na ficha disciplinar do estudante. Para os relatos individuais confirmados, use as ferramentas de observação ou RA, conforme o caso.
+
+> Exemplo: “Compare o registro de aulas deste PDF com o diário da turma. Mostre as aulas com horários confirmados e os acontecimentos sem horário; aponte campos indefinidos e divergências antes de salvar.”
 
 ### Como usar os relatórios existentes
 

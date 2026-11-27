@@ -59,11 +59,10 @@ export const bulkUniformValidator = vine.compile(
   })
 )
 
-export const upsertLessonDayValidator = vine.compile(
-  vine.object({
+function lessonDayFields() {
+  return {
     classroom_id: vine.number().positive(),
     date: pastOrTodayDate(),
-    planned_lessons: vine.number().range([1, 12]),
     note: text(1000).optional().nullable(),
     lessons: vine
       .array(
@@ -81,5 +80,19 @@ export const upsertLessonDayValidator = vine.compile(
       .maxLength(12)
       .distinct('period')
       .optional(),
+  }
+}
+
+export const upsertLessonDayValidator = vine.compile(
+  vine.object({
+    ...lessonDayFields(),
+    planned_lessons: vine.number().range([1, 12]),
+  })
+)
+
+export const patchLessonDayValidator = vine.compile(
+  vine.object({
+    ...lessonDayFields(),
+    planned_lessons: vine.number().range([1, 12]).optional(),
   })
 )

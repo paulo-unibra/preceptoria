@@ -196,6 +196,85 @@ test.group('MCP de preceptoria', (group) => {
         historyRa.body().result.structuredContent.items[0].data.description,
         'Realizou a atividade de Artes.'
       )
+
+      const diaryQuery = { classroom_id: turma.id, from: today(), to: today() }
+      const lessons = {
+        ...day,
+        planned_lessons: 7,
+        lessons: [
+          { period: 1, subject: 'Ciências', content: 'Ondas.' },
+          { period: 2, subject: 'Ciências' },
+        ],
+      }
+      assert.isTrue((await call('salvar_aulas', lessons, reader)).body().result.isError)
+      const savedLessons = await call('salvar_aulas', lessons, writer)
+      assert.isTrue(savedLessons.body().result.structuredContent.created)
+      const updatedLessons = await call(
+        'salvar_aulas',
+        { ...day, lessons: [{ period: 1, progress: 'Exercícios no quadro.' }] },
+        writer
+      )
+      const entries = updatedLessons.body().result.structuredContent.lesson_day.lessons
+      assert.equal(entries.length, 2)
+      assert.equal(entries[0].content, 'Ondas.')
+      assert.isTrue(
+        (
+          await call(
+            'salvar_aulas',
+            { ...day, lessons: [{ period: 1, not_identified: true }] },
+            writer
+          )
+        ).body().result.isError
+      )
+
+      const institutional = await call(
+        'cadastrar_acontecimento_turma',
+        {
+          ...day,
+          kind: 'ocorrencia_institucional',
+          title: 'Ocorrência encaminhada à gestão',
+          description: 'A gestão foi comunicada sobre um acontecimento ocorrido durante a aula.',
+        },
+        writer
+      )
+      const eventId = institutional.body().result.structuredContent.id
+      const editedEvent = await call(
+        'editar_acontecimento_turma',
+        { id: eventId, changes: { title: 'Registro institucional encaminhado' } },
+        writer
+      )
+      assert.equal(editedEvent.body().result.structuredContent.id, eventId)
+      const interruption = await call(
+        'cadastrar_acontecimento_turma',
+        {
+          ...day,
+          kind: 'interrupcao',
+          title: 'Parada pedagógica',
+          description: 'Sem acompanhamento regular.',
+        },
+        writer
+      )
+      assert.isNumber(interruption.body().result.structuredContent.id)
+      const colleague = await token('colega', 'preceptoria:read')
+      const restrictedDiary = await call('consultar_diario_turma', diaryQuery, colleague)
+      assert.deepEqual(
+        restrictedDiary
+          .body()
+          .result.structuredContent.acontecimentos.map((e: { kind: string }) => e.kind),
+        ['interrupcao']
+      )
+      const fullDiary = await call('consultar_diario_turma', diaryQuery, reader)
+      assert.equal(fullDiary.body().result.structuredContent.aulas[0].lessons[0].content, 'Ondas.')
+      assert.equal(
+        fullDiary.body().result.structuredContent.acontecimentos[1].title,
+        'Registro institucional encaminhado'
+      )
+      const outside = await call(
+        'consultar_diario_turma',
+        { ...diaryQuery, classroom_id: outra.id },
+        reader
+      )
+      assert.isTrue(outside.body().result.isError)
     } finally {
       await new Promise<void>((resolve) => keyServer.close(() => resolve()))
     }
