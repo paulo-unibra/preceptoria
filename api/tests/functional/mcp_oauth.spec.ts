@@ -34,7 +34,11 @@ test.group('OAuth próprio do MCP', (group) => {
       const discovery = await client.get('/.well-known/oauth-authorization-server')
       discovery.assertBodyContains({ issuer, code_challenge_methods_supported: ['S256'] })
       const metadata = await client.get('/.well-known/oauth-protected-resource/mcp')
+      metadata.assertStatus(200)
       metadata.assertBodyContains({ resource, authorization_servers: [issuer] })
+      const fallback = await client.get('/.well-known/oauth-protected-resource')
+      fallback.assertStatus(200)
+      fallback.assertBody(metadata.body())
       const invalid = await client
         .get(url)
         .qs({ ...query, redirect_uri: 'https://exemplo.test/redirect' })

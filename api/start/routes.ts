@@ -38,6 +38,7 @@ router.get('/', async () => ({ name: 'Preceptoria - Acompanhamento Escolar API',
 router.get('/privacidade', [PagesController, 'privacy'])
 router.get('/exclusao-de-conta', [PagesController, 'accountDeletion'])
 router.get('/.well-known/oauth-protected-resource/mcp', [McpController, 'metadata'])
+router.get('/.well-known/oauth-protected-resource', [McpController, 'metadata'])
 router.route('/mcp', ['POST', 'GET', 'DELETE'], [McpController, 'handle'])
 router.get('/.well-known/oauth-authorization-server', [McpOauthController, 'metadata'])
 router.get('/admin/acesso-personalizado', [McpOauthController, 'authorize'])
